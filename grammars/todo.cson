@@ -1,6 +1,32 @@
-'scopeName': 'text.todo'
+'scopeName': 'text.noted'
 'injectionSelector': 'comment, text.plain'
 'patterns': [
+  {
+      'match': '(?<!\\w)@?(ATTENTION|ATTN|COMBAK|HACK|TEMP|WARN|WARNING|XXX)\\b'
+      'name': 'storage.type.class.${1:/downcase}.tag.comback'
+  }
+
+  {
+      'match': '(?<!\\w)@?(ATTENTION|ATTN|COMBAK|HACK|TEMP|WARN|WARNING|XXX)\\b'
+      'name': 'storage.type.class.${1:/downcase}.tag.attention'
+  }
+
+
+  {
+    'match': '(?<!\\w)@?(CONSIDER|DECIDE|DEPRECATED)\\b'
+    'name': 'storage.type.class.${1:/downcase}.tag.work.earmarked'
+  }
+
+
+
+
+
+
+
+  {
+    'match': '(?<!\\w)@?(ATTENTION|ATTN|BROKEN|CHGME|DEPRECATED|ERR|ERROR|FATAL|FIXED|IMPROVE|INFO|LOG|NOTREACHED|OMFGRLY|OMG|OPTIMIZED|PS|REFACTOR|REMOVE|TABULO|TASK|TAU|TBD|TBS|TEST|TODOC|UNDONE|WARN|WTF)\\b'
+    'name': 'storage.type.class.${1:/downcase}'
+  }
   {
     'match': '(?<!\\w)@?(TODO|FIXME|CHANGED|XXX|IDEA|HACK|NOTE|REVIEW|NB|BUG|QUESTION|COMBAK|TEMP|DEBUG|OPTIMIZE|WARNING)\\b'
     'name': 'storage.type.class.${1:/downcase}'
