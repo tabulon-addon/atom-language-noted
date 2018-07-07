@@ -27,7 +27,7 @@ repository: {
   istandout: {
     comment: '<<<<         > >><<<    >><    >>>>>'
     comment: '0123         3 24567    768    85410'
-    match:   '^((([#@+!?*%])*)(((([#@]))(\\w+))))$'   # Simpler regex (assumes an isolated match, @FILAN but keeps the same captures as the main regex.)
+    match:   '^((([#@+!?*%])*)(((([#@]))(\\w+))))$'   # Simpler regex (assumes an isolated match, BUG !#FILAN but keeps the same captures as the main regex.)
     captures:
       1:  patterns: [
            { include: 'istandout_spirit_bad' }
@@ -41,21 +41,21 @@ repository: {
           name: 'punctuation.definition.standout.spirit'
           patterns: [ { include: '#ispirit_punctuation' } ]
 
-      3:  name: 'punctuation.definition.standout.spirit.symbol'
+      3: name: 'punctuation.definition.standout.spirit.symbol'
 
 #      4:  name: 'meta.standout.reference'
-      5:  name: 'storage.type.class.${1:/downcase}'                 # lang-todo compatible scope name
-      6:  name: 'punctuation.definition.standout.reftype'
-      7:  name: 'punctuation.definition.standout.reftype.symbol'
+      5: name: 'storage.type.class.${1:/downcase}'                 # lang-todo compatible scope name
+      6: name: 'punctuation.definition.standout.reftype'
+      7: name: 'punctuation.definition.standout.reftype.symbol'
 #      8:  name: 'entity.name.tag.standout'
   }
 
   ispirit_punctuation: {
-    comment: '<<<         > >>'
-    comment: '012         2 10'
-    match:   '^((([#@+!?*%])*))$'            # Simpler regex (assumes an already isolated match for punctuation)
-      2:  name: 'keyword.operator.spirit-indicator'
-      3:  name: 'punctuation.definition.standout.spirit.symbol'
+    comment: '<<<          > >>>'
+    comment: '0123         3 210'
+    match:   '^((([#@+!?*%])*))$'
+      2: name: 'keyword.operator.spirit-indicator'
+      3: name: 'punctuation.definition.standout.spirit.symbol'
   }
 
 
