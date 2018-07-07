@@ -1,0 +1,125 @@
+scopeName: 'text.noted'
+name: 'NOTED'
+injectionSelector: 'comment, text.plain'
+patterns: [
+  { include: '#standout' }
+  { include: '#radar' }
+]
+
+
+repository: {
+
+  standout: {
+    comment: '<       <<<         > ><<<<    ><<    >>>>  >'
+    comment: '0       123         3 24567    768    8541  0'
+    match:   '(?:!\\w)((([#@+!?*%])*)(((([#@]))(\\w+))))\\b'
+    captures:
+      1:
+#          name: 'meta.standout'
+          patterns: [ { include: '#istandout' } ]
+
+      2:  name: 'punctuation.definition.standout'
+#      4:  name: 'meta.standout.reference'
+#      8:  name: 'meta.standout.label'
+  }
+
+
+  istandout: {
+    comment: '<<<<         > >><<<    >><    >>>>>'
+    comment: '0123         3 24567    768    85410'
+    match:   '^((([#@+!?*%])*)(((([#@]))(\\w+))))$'   # Simpler regex (assumes an isolated match, @FILAN but keeps the same captures as the main regex.)
+    captures:
+      1:  patterns: [
+           { include: 'istandout_spirit_bad' }
+           { include: 'istandout_spirit_spooky' }
+           { include: 'istandout_spirit_alert' }
+           { include: 'istandout_spirit_question' }
+           { include: 'istandout_spirit_good' }
+           { include: 'istandout_spirit_neutral' }
+         ]
+      2:
+          name: 'punctuation.definition.standout.spirit'
+          patterns: [ { include: '#ispirit_punctuation' } ]
+
+      3:  name: 'punctuation.definition.standout.spirit.symbol'
+
+#      4:  name: 'meta.standout.reference'
+      5:  name: 'storage.type.class.${1:/downcase}'                 # lang-todo compatible scope name
+      6:  name: 'punctuation.definition.standout.reftype'
+      7:  name: 'punctuation.definition.standout.reftype.symbol'
+#      8:  name: 'entity.name.tag.standout'
+  }
+
+  ispirit_punctuation: {
+    comment: '<<<         > >>'
+    comment: '012         2 10'
+    match:   '^((([#@+!?*%])*))$'            # Simpler regex (assumes an already isolated match for punctuation)
+      2:  name: 'keyword.operator.spirit-indicator'
+      3:  name: 'punctuation.definition.standout.spirit.symbol'
+  }
+
+
+#----------
+  istandout_good: {
+    match: '^((([+])+)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.good'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-good'
+    }
+
+  istandout_alert: {
+    match: '^((([!])+)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.alert'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-alert'
+    }
+
+  istandout_question: {
+    match: '^((([?])+)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.question'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-question'
+    }
+
+  istandout_bad: {
+    match: '^((([*])+)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.bad'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-bad'
+    }
+
+  istandout_spooky: {
+    match: '^((([%])+)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.spooky'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-spooky'
+    }
+
+  istandout_neutral: {
+    match: '^((([#@])*)(((([#@]))(\\w+))))$'
+    captures:
+      4: name: 'markup.other.spirit.neutral'
+      5: name: 'storage.type.class.${1:/downcase}.spirit-neutral'
+    }
+#----------
+
+
+  iconform_lang_todo: {
+    match:'([@]?.*)'
+    captures:
+      0: name: 'storage.type.class.${1:/downcase}'          # this is more or less what #FILAN !@FILAN language-todo does
+      1: name: 'storage.type.class.${1:/downcase}'    # same as above, but with our scope appended, for easy differentiation, if need.
+
+  }
+
+
+  radar: {
+    match: '<(ra?dar:/(?:/problems?|)/(?:[&0-9]+))>'
+    name: 'storage.type.class.radar'
+    captures:
+      1: name: 'markup.underline.link.radar'
+  }
+
+
+
+}

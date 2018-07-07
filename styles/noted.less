@@ -1,4 +1,17 @@
 atom-text-editor:not(.mini) {
+  
+    .syntax--markup {
+        &.syntax--bad, {
+          color: #f92672;       // ugly red, same as OMG
+          font-weight: bold;
+        }
+        &.syntax--alert, {
+          color: #ffd569;       // bright yellow, same as HACK
+          font-weight: bold;
+        }
+    }
+
+// !
     .syntax--storage {
       // NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK
       &.syntax--note,
@@ -15,16 +28,26 @@ atom-text-editor:not(.mini) {
         font-weight: bold;
       }
 
-      // CONSIDER|DECIDE|FILAN
+      // @TODO TODO:
+
+      // CONSIDER|DECIDE|IMPROVE|DETAILS|FILAN
       //&.syntax--consider,
-      &.syntax--tag.work,
+      &.syntax--_noted-stuff,
       // &.syntax--consider,
       // &.syntax--decide,
       &.syntax--filan {
-        color: #ae81ff;
 
-        // bright yellow
-        // color: #ffd569;
+        // color: #66d9ef;     // bright blue, same as INFO
+        // color: #ae81ff;     // weird purple,  same as DEPRECATED
+        color: #ffd569;       // bright yellow, same as HACK
+
+        // color: #f92672;     // ugly red, same as OMG
+        font-weight: bold;
+      }
+
+      // <radar://458&478>
+      &.syntax--radar {
+        color: #ffd569;  // bright yellow, same as HACK
         font-weight: bold;
       }
 

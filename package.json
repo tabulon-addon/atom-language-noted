@@ -1,7 +1,8 @@
 {
   "name": "language-noted",
-  "version": "0.29.4",
+  "version": "0.30.2",
   "description": "TODO/FIXME style highlighting within comments and plain text in Atom, only more",
+  "license": "MIT",
   "engines": {
     "atom": "*",
     "node": "*"
@@ -11,10 +12,10 @@
     "type": "git",
     "url": "https://github.com/tabulon-ext/atom-language-noted.git"
   },
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tabulon-ext/atom-language-noted/issues"
   },
+  "dependencies": {},
   "devDependencies": {
     "coffeelint": "^1.10.1"
   }
