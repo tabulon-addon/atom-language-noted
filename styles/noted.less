@@ -1,82 +1,72 @@
+
+// The order of @imports is !@IMPORTANT.
+// This way, we are sure to have our special variables defined (),
+// but also that they may be overridden by the current syntax theme (if any syntax theme ventures out to support 'language-noted', they can )
+@import "syntax-variables-noted";
+@import "syntax-variables";
+
+@baseColorDefault: @syntax-color-spirit-neutral;
+@baseColorNameDefault: 'syntax-color-spirit-neutral';
+
+// .LevelsOfSaturation(@baseColor:@baseColorDefault) {
+//   color: @baseColor;
+//   &.syntax--0         { color: @baseColor;                  }
+//   &.syntax--1         { color: saturate(@baseColor, 10%);   }
+//   &.syntax--2         { color: saturate(@baseColor, 20%);   }
+//   &.syntax--3         { color: saturate(@baseColor, 30%);   }
+//   &.syntax--4         { color: saturate(@baseColor, 40%);   }
+//   &.syntax--5         { color: saturate(@baseColor, 50%);   }
+//   &.syntax--6         { color: saturate(@baseColor, 60%);   }
+//   &.syntax--7         { color: saturate(@baseColor, 70%);   }
+//   &.syntax--8         { color: saturate(@baseColor, 80%);   }
+//   &.syntax--9         { color: saturate(@baseColor, 90%);   }
+// }
+
+// .AssortedLevels(@baseColorName:@baseColorNameDefault) {
+//   color: @baseColor;
+//   &.syntax--0         { color: @baseColor;                  }
+//   &.syntax--1         { color: saturate(@baseColor, 10%);   }
+//   &.syntax--2         { color: saturate(@baseColor, 20%);   }
+//   &.syntax--3         { color: saturate(@baseColor, 30%);   }
+//   &.syntax--4         { color: saturate(@baseColor, 40%);   }
+//   &.syntax--5         { color: saturate(@baseColor, 50%);   }
+//   &.syntax--6         { color: saturate(@baseColor, 60%);   }
+//   &.syntax--7         { color: saturate(@baseColor, 70%);   }
+//   &.syntax--8         { color: saturate(@baseColor, 80%);   }
+//   &.syntax--9         { color: saturate(@baseColor, 90%);   }
+// }
+//
+//
+
 atom-text-editor:not(.mini) {
-  
-    .syntax--markup {
-        &.syntax--bad, {
-          color: #f92672;       // ugly red, same as OMG
-          font-weight: bold;
-        }
-        &.syntax--alert, {
-          color: #ffd569;       // bright yellow, same as HACK
-          font-weight: bold;
-        }
+
+  .syntax--noted {
+  //  color: #66d9ef;
+  //  font-weight: bold;
+    &.syntax--radar {
+      color: @syntax-color-noted-radar;          // as in : <radar://458&478>
     }
+  }
 
-// !
-    .syntax--storage {
-      // NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK
-      &.syntax--note,
-      &.syntax--info,
-      &.syntax--idea,
-      &.syntax--debug,
-      &.syntax--remove,
-      &.syntax--optimize,
-      &.syntax--review,
-      &.syntax--undone,
-      &.syntax--todo,
-      &.syntax--task, {
-        color: #66d9ef;
-        font-weight: bold;
+  .syntax--markup {
+    &.syntax--spirit, {
+      font-weight: bold;
+
+      &.syntax--good    { color: @syntax-color-spirit-good;     }  // as in :  +@GOOD,     or in  +@DONE
+      &.syntax--eager   { color: @syntax-color-spirit-eager;    }  // as in :  :@EAGER
+      &.syntax--curious { color: @syntax-color-spirit-curious;  }  // as in :  ?@CURIOUS, or in ?@WHY?
+      &.syntax--alert   { color: @syntax-color-spirit-alert;    }  // as in :  !@ALERT,   or in !@ATTENTION
+      &.syntax--fishy   { color: @syntax-color-spirit-fishy;    }  // as in :  *@FISHY,   or in *@HACK
+      &.syntax--bad     { color: @syntax-color-spirit-bad       }  // as in :  -@BAD,     or in -@OMG
+      &.syntax--spooky  { color: @syntax-color-spirit-spooky;   }  // as in :  %@SPOOKY,   or in %@DEPRECATED
+
+      &.syntax--human   { color: @syntax-color-spirit-human;    }  // as in : ~@AUTHOR,   or in ~@JOHN
+      &.syntax--neutral { color: @syntax-color-spirit-neutral;  }  // as in :  @@NEUTRAL, or in @@INFO
+      &.syntax--bland   { color: @syntax-color-spirit-bland;
+        &.syntax--dull      { color: @syntax-color-spirit-bland-dull;     }    // as in :  ;@DULL,    or in ;@NO-WORRIES
+        &.syntax--verbose   { color: @syntax-color-spirit-bland-verbose;  }    // as in :  &@VERBOSE, or in &@SIDE-NOTE:
       }
 
-      // @TODO TODO:
-
-      // CONSIDER|DECIDE|IMPROVE|DETAILS|FILAN
-      //&.syntax--consider,
-      &.syntax--_noted-stuff,
-      // &.syntax--consider,
-      // &.syntax--decide,
-      &.syntax--filan {
-
-        // color: #66d9ef;     // bright blue, same as INFO
-        // color: #ae81ff;     // weird purple,  same as DEPRECATED
-        color: #ffd569;       // bright yellow, same as HACK
-
-        // color: #f92672;     // ugly red, same as OMG
-        font-weight: bold;
-      }
-
-      // <radar://458&478>
-      &.syntax--radar {
-        color: #ffd569;  // bright yellow, same as HACK
-        font-weight: bold;
-      }
-
-      // DEPRECATED
-      &.syntax--deprecated {
-        color: #ae81ff;
-        font-weight: bold;
-      }
-
-      // WARNING|WARN|HACK
-      &.syntax--warning,
-      &.syntax--warn,
-      &.syntax--hack {
-        color: #ffd569;
-        font-weight: bold;
-      }
-
-      // WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR
-      &.syntax--wtf,
-      &.syntax--bug,
-      &.syntax--error,
-      &.syntax--omg,
-      &.syntax--err,
-      &.syntax--omfgrly,
-      &.syntax--broken,
-      &.syntax--refactor {
-        color: #f92672;
-        // color : @text-color-error
-        font-weight: bold;
-      }
     }
+  }
 }

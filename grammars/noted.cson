@@ -6,120 +6,183 @@ patterns: [
   { include: '#radar' }
 ]
 
-
 repository: {
+  radar: {
+    match: '<(ra?dar:/(?:/problems?|issues?|tickets?|bug-reports?|bugs?|reports?)/(?:[&0-9]+))>'
+    name: 'storage.type.class.radar.noted'
+    captures:
+      1: name: 'markup.underline.link.radar.noted'
+  }
+
 
   standout: {
-    comment: '<       <<<         > ><<<<    ><<    >>>>  >'
-    comment: '0       123         3 24567    768    8541  0'
-    match:   '(?:!\\w)((([#@+!?*%])*)(((([#@]))(\\w+))))\\b'
+    comment: '<       <<<       > ><<<<    ><<            >>>>  >'
+    comment: '0       123       3 24567    768            8541  0'
+    match:   '(?<!\\w)((([!\\-.;&?:*+~%#@]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))\\b'
     captures:
       1:
-#          name: 'meta.standout'
+          name: 'meta.standout.noted'
           patterns: [ { include: '#istandout' } ]
 
-      2:  name: 'punctuation.definition.standout'
-#      4:  name: 'meta.standout.reference'
-#      8:  name: 'meta.standout.label'
+      2:  name: 'punctuation.definition.standout.spirit.noted'
+      5:  name: 'meta.standout.reference.noted'
+      8:  name: 'meta.standout.label.noted'
   }
 
 
   istandout: {
-    comment: '<<<<         > >><<<    >><    >>>>>'
-    comment: '0123         3 24567    768    85410'
-    match:   '^((([#@+!?*%])*)(((([#@]))(\\w+))))$'   # Simpler regex (assumes an isolated match, BUG !#FILAN but keeps the same captures as the main regex.)
+    comment: '<<<<       > >><<<    >><            >>>>>'
+    comment: '0123                  34      4256    78              876510'
+    match:   '^((([!\\-.;&?:*+~%#@]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    # This match uses a simpler regex that the main one. It assumes an already delimited match, but keeps the same captures as the main regex.
+    # Below are a bunch of tokens for a quick reference and also a brief visual test.
+    #   @INVALID ~@AUTHOR @@NEUTRAL :@EAGER .@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION !@ALERT *@FISHY -@BAD %@SPOOKY
+    #   #INVALID ~#AUTHOR ##NEUTRAL :@EAGER .@BLAND ;@DULL &@VERBOSE +#GOOD ?#QUESTION !#ALERT *#FISHY -#BAD %#SPOOKY
+    #   Levels -5@BAD
     captures:
-      1:  patterns: [
-           { include: 'istandout_spirit_bad' }
-           { include: 'istandout_spirit_spooky' }
-           { include: 'istandout_spirit_alert' }
-           { include: 'istandout_spirit_question' }
-           { include: 'istandout_spirit_good' }
-           { include: 'istandout_spirit_neutral' }
+      1:
+          name: 'meta.standout.delimited.noted'
+          patterns: [
+            { include: '#istandout_alert' }
+            { include: '#istandout_bad' }
+            { include: '#istandout_bland' }
+            { include: '#istandout_bland_dull' }
+            { include: '#istandout_bland_verbose' }
+            { include: '#istandout_curious' }
+            { include: '#istandout_eager' }
+            { include: '#istandout_fishy' }
+            { include: '#istandout_good' }
+            { include: '#istandout_human' }
+            { include: '#istandout_spooky' }
+            { include: '#istandout_neutral' }
          ]
       2:
-          name: 'punctuation.definition.standout.spirit'
-          patterns: [ { include: '#ispirit_punctuation' } ]
+          name: 'punctuation.definition.standout.spirit.noted'
+#          patterns: [ { include: '#ispirit_punctuation' } ]
 
-      3: name: 'punctuation.definition.standout.spirit.symbol'
-
-#      4:  name: 'meta.standout.reference'
-      5: name: 'storage.type.class.${1:/downcase}'                 # lang-todo compatible scope name
-      6: name: 'punctuation.definition.standout.reftype'
-      7: name: 'punctuation.definition.standout.reftype.symbol'
-#      8:  name: 'entity.name.tag.standout'
+      3: name: 'punctuation.definition.standout.spirit.designator.noted'
+      4: name: 'markup.standout.level.noted'
+      5: name: 'meta.standout.reference.noted'
+      6: name: 'storage.type.class.${1:/downcase}.noted'                 # lang-todo compatible scope name
+      7: name: 'punctuation.definition.standout.reftype.noted'
+      8: name: 'entity.name.tag.standout.noted'
   }
 
-  ispirit_punctuation: {
-    comment: '<<<          > >>>'
-    comment: '0123         3 210'
-    match:   '^((([#@+!?*%])*))$'
-      2: name: 'keyword.operator.spirit-indicator'
-      3: name: 'punctuation.definition.standout.spirit.symbol'
-  }
+  # ispirit_punctuation: {
+  #   comment: '<<<          > >>>'
+  #   comment: '0123         3 210'
+  #   match:   '^((([!\\-.;&?:*+~%#@]*)))$'
+  #   captures:
+  #     2: name: 'keyword.operator.spirit-spec.noted'
+  #     3: name: 'punctuation.definition.standout.spirit.designator.noted'
+  # }
 
 
-#----------
-  istandout_good: {
-    match: '^((([+])+)(((([#@]))(\\w+))))$'
-    captures:
-      4: name: 'markup.other.spirit.good'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-good'
-    }
+#----------------------------------------------------------
+# The following rules (that deal with individual spirits) are semi-automatically
+# generated with the help of EXCEL formulas within the worksheet <src/grammar.xlsm>
+# For the moment, they are copied pasted manually onto here.
+# ---------------------------------------------------------
+# auto-generated BEGIN {
 
   istandout_alert: {
-    match: '^((([!])+)(((([#@]))(\\w+))))$'
+    match: '^((([!]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
     captures:
-      4: name: 'markup.other.spirit.alert'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-alert'
-    }
-
-  istandout_question: {
-    match: '^((([?])+)(((([#@]))(\\w+))))$'
-    captures:
-      4: name: 'markup.other.spirit.question'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-question'
+      1: name: 'meta.standout.spirit.alert.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.alert.noted'
+      6: name: 'markup.spirit.alert.${4:/downcase}.noted'
     }
 
   istandout_bad: {
-    match: '^((([*])+)(((([#@]))(\\w+))))$'
+    match: '^((([\\-]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
     captures:
-      4: name: 'markup.other.spirit.bad'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-bad'
+      1: name: 'meta.standout.spirit.bad.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.bad.noted'
+      6: name: 'markup.spirit.bad.${4:/downcase}.noted'
+    }
+
+  istandout_bland: {
+    match: '^((([.]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.bland.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.bland.noted'
+      6: name: 'markup.spirit.bland.${4:/downcase}.noted'
+    }
+
+  istandout_bland_dull: {
+    match: '^((([;]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.bland.dull.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.bland.dull.noted'
+      6: name: 'markup.spirit.bland.dull.${4:/downcase}.noted'
+    }
+
+  istandout_bland_verbose: {
+    match: '^((([&]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.bland.verbose.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.bland.verbose.noted'
+      6: name: 'markup.spirit.bland.verbose.${4:/downcase}.noted'
+    }
+
+  istandout_curious: {
+    match: '^((([?]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.curious.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.curious.noted'
+      6: name: 'markup.spirit.curious.${4:/downcase}.noted'
+    }
+
+  istandout_eager: {
+    match: '^((([:]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.eager.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.eager.noted'
+      6: name: 'markup.spirit.eager.${4:/downcase}.noted'
+    }
+
+  istandout_fishy: {
+    match: '^((([*]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.fishy.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.fishy.noted'
+      6: name: 'markup.spirit.fishy.${4:/downcase}.noted'
+    }
+
+  istandout_good: {
+    match: '^((([+]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.good.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.good.noted'
+      6: name: 'markup.spirit.good.${4:/downcase}.noted'
+    }
+
+  istandout_human: {
+    match: '^((([~]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
+    captures:
+      1: name: 'meta.standout.spirit.human.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.human.noted'
+      6: name: 'markup.spirit.human.${4:/downcase}.noted'
     }
 
   istandout_spooky: {
-    match: '^((([%])+)(((([#@]))(\\w+))))$'
+    match: '^((([%]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
     captures:
-      4: name: 'markup.other.spirit.spooky'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-spooky'
+      1: name: 'meta.standout.spirit.spooky.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.spooky.noted'
+      6: name: 'markup.spirit.spooky.${4:/downcase}.noted'
     }
 
   istandout_neutral: {
-    match: '^((([#@])*)(((([#@]))(\\w+))))$'
+    match: '^((([#@]+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
     captures:
-      4: name: 'markup.other.spirit.neutral'
-      5: name: 'storage.type.class.${1:/downcase}.spirit-neutral'
+      1: name: 'meta.standout.spirit.neutral.noted'
+      5: name: 'storage.type.class.${1:/downcase}.spirit.neutral.noted'
+      6: name: 'markup.spirit.neutral.${4:/downcase}.noted'
     }
-#----------
 
 
-  iconform_lang_todo: {
-    match:'([@]?.*)'
-    captures:
-      0: name: 'storage.type.class.${1:/downcase}'          # this is more or less what #FILAN !@FILAN language-todo does
-      1: name: 'storage.type.class.${1:/downcase}'    # same as above, but with our scope appended, for easy differentiation, if need.
-
-  }
-
-
-  radar: {
-    match: '<(ra?dar:/(?:/problems?|)/(?:[&0-9]+))>'
-    name: 'storage.type.class.radar'
-    captures:
-      1: name: 'markup.underline.link.radar'
-  }
-
+# } END auto-generated
 
 
 }
