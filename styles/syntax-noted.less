@@ -4,47 +4,51 @@
 // This way, we are sure to have our special variables defined (),
 // but also that they may be overridden by the current syntax theme (if any syntax theme ventures out to support 'language-noted', they can )
 
-// @noted-color-so-spooky: #da15bc;    // as in :  %3@SPOOKY,   or in %@DEPRECATED
+// @noted-color-so-spooky: #da15bc;    // as in :  %@SPOOKY,   or in %@DEPRECATED
 // @noted-color-so-bad: #E54D73;      // as in :  -@BAD,      or in -@OMG
 // @noted-color-so-fishy: #ff9800;    // as in :  *@FISHY,    or in *@HACK
 // @noted-color-so-alert: #ffd569;    // as in :  !@ALERT,    or in !@ATTENTION
+// @noted-color-so-good: #ffd569;    // as in :  +@GOOD,    or in +@DONE
 
 
-@import (once)      "syntax-variables-noted";
+@import (once)      "settings-noted";
 @import (optional)  "syntax-variables";
 @import (once)      "utils-noted";
 
 
-
 //.....................................
 .HiliteNoted ( @set:{} )  {
-  .Hilite( { .Markup( @set ) });
+  .NotedMarkup( @set )
 }
 
 
 //.....................................
-.Markup( @set:{} ) {
-  &markup {
-    @set();
-    .Hilite({ .Standout(); });
+.NotedMarkup( @set:{} ) {
+  .syntax--markup {
+    .Hilite({ .NotedStandout(@set); });
   }
 }
 
 //.....................................
-.Standout( @set:{} ) {
+.NotedStandout( @csso:{} ) {
   &standout  {
-    .Registered();
-    //.Standout(@with: noselectors; @set);
-    color: @noted-color-so-default;
-    font-weight: bold;
-    @set();
-
-    .ForEach(item; @in: @spirits; @do:{  .Hilite({ .Spirit(@item) });   });
+    .Standout();
+    @csso();
+  }
+  &standout  {
+    .Hilite({ .NotedSpirits(); });
+//    .ForEach(item; @in: @spirits; @do:{  .Hilite({ .Spirit(@item) });   });
   }
 }
 
 //.....................................
-.Spirit (@name; @set:{} )  {
+.NotedSpirits() {
+   @spirits: @noted-spirits;
+  .ForEach(item; @in: @spirits; @do:{  .NotedSpirit(@item) });
+}
+
+//.....................................
+.NotedSpirit (@name; @set:{} )  {
   // We need the 'call' to happen early so that we can get the @marker, if any.
   // This is the only way I have found with the current version of Atom, which appears
   // to be using an archaic verson of Less.js (< v3.5)
@@ -53,7 +57,17 @@
   @ename:   ~'@{name}';
   @emarker: ~"@{marker}";
 
-  &@{ename}, &spirit-@{ename}, &spirit-marker-@{emarker} {
+  &spirit-@{ename},
+  &spirit-marker-@{emarker} {
     @css();
   }
 }
+
+//.....................................
+// The below mixins do nothing by default. Their more useful
+// counterparts are defined in their corresponding "settings" file.
+//.....................................
+.Standout()         {}
+.Spirit(@name)      {}
+.SpiritDef(@name)   {}
+.SpiritStd(@name)   {}

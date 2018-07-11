@@ -1,0 +1,51 @@
+//out: ../tmp/settings-noted.css
+//
+//  Syntax variables for 'language-noted'
+//
+//  This file specifies all syntax variables that may used by ' language-noted' and co; and ONLY those variables.
+//  This also includes color variables, which are defined in a separate file for convenience.
+//
+//  Note that, we do not use nor influence any regular 'syntax-variables' (in Atom syntax highlighting terms)
+//
+//  Particularly, we do NOT assign to any of the standard Atom syntax variables (e.g. text-color, , ...)
+//  Instead, we introduce a whole new set of syntax variables (and fallback values), including colors, that are used by 'language-noted'.
+//
+//  This way, we avoid interfering (or sharing anything) with the syntax highlighting aspects of the
+//  host [source] language.
+//
+//  This kind of strategy appears to suit quite well to parasytic guest languages such as 'noted' that inject
+//  themselves into a wide variety of scopes within almost any source [host] language.
+//
+//  The logical consequence is that syntax themes that wish to support 'language-noted' and any of its derivations
+//  would need to do so explicetely, by overriding any of the below variables directly.
+//
+// The names are intentionnally chosen to be distinct from the usual conventions,
+// since "language-noted" injects itself into the current scope, regardless of the source language, as long as
+// the current scope is within 'comments' and 'text-plain', just like "language-TODO".
+
+@import (once) "colors-noted";
+@import (once) "spirits-noted";
+
+//---------------------------------------------------------
+// SPIRIT - settings
+//---------------------------------------------------------
+// The variables just below are actually defined in 'spirits-noted.less'.
+// In code, it's the variable without the '-std' suffix that gets used. So, it's easy to override that one.
+@noted-spirits: @noted-spirits-std;
+@noted-spirit-css: @noted-spirit-css-std;
+
+//---------------------------------------------------------
+// STANDOUT - settings
+//---------------------------------------------------------
+@noted-standout-css: @noted-standout-css-std;
+@noted-standout-css-std: {
+  // CSS properties applied by default to all noted standouts
+  color: @noted-color-so-default;
+  font-weight: bold;
+};
+
+// The actual mixin that 'spits out' the CSS properties for a given standout
+//.....................................
+.Standout() {
+  @noted-standout-css();
+}

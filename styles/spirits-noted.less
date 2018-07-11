@@ -1,0 +1,96 @@
+//out: ../tmp/spirits-noted.css
+//
+//  Syntax variables and mixing related to highlighting "spirits" in 'language-noted'
+//
+//  This file specifies all variables that 'language-noted' uses for the above purpose; and ONLY those variables.
+//
+//  For more info on 'noted' syntax variables, including guidelines for using and overridding those,
+//  please refer to the comments in "settings-noted.less"
+//
+
+@import (optional) "colors";
+@import (once)     "colors-noted";
+
+// "Standard" spirits are "defined" with this mixin.
+// For the moment, the only difference with non-standard spirits is the
+// existence of a dedicated color variable for each standard-spirit.
+//.....................................
+.SpiritStd(@name; @colorVar: ~'noted-color-so-@{name}')   {
+  .SpiritDef(@name; @colorVar: @colorVar);
+}
+
+
+// This one is the fallback and it  MUST be on top
+// of the other .SpiritDef lines (i.e. all the standard spirit definitions)
+//.....................................
+.SpiritDef(@name;  @colorVar: ~'noted-color-so-default') {
+    @marker: ~"@{name}";
+    @noted-color: @@colorVar;
+    @css: { .Spirit(@name) };
+}
+
+// Standard (predefined) spirits. Enjoy.
+//.....................................
+.SpiritDef(default    )     { @marker: ~"@{name}";   .SpiritStd(@name); }
+.SpiritDef(neutral    )     { @marker: ~"@{name}";   .SpiritStd(@name); }
+.SpiritDef(spooky     )     { @marker: ~'\%';  .SpiritStd(@name); }
+.SpiritDef(bad        )     { @marker: ~'\-';  .SpiritStd(@name); }
+.SpiritDef(fishy      )     { @marker: ~'\*';  .SpiritStd(@name); }
+.SpiritDef(alert      )     { @marker: ~'\!';  .SpiritStd(@name); }
+.SpiritDef(good       )     { @marker: ~'\+';  .SpiritStd(@name); }
+.SpiritDef(pertinent  )     { @marker: ~'\>';  .SpiritStd(@name); }
+.SpiritDef(curious    )     { @marker: ~'\?';  .SpiritStd(@name); }
+.SpiritDef(eager      )     { @marker: ~'\:';  .SpiritStd(@name); }
+.SpiritDef(bland      )     { @marker: ~'\.';  .SpiritStd(@name); }
+.SpiritDef(dull       )     { @marker: ~'\;';  .SpiritStd(@name); }
+.SpiritDef(verbose    )     { @marker: ~'\&';  .SpiritStd(@name); }
+.SpiritDef(artisan    )     { @marker: ~'\~';  .SpiritStd(@name); }
+.SpiritDef(mentioned  )     { @marker: ~'\@';  .SpiritStd(@name); }
+.SpiritDef(hashtaggy  )     { @marker: ~'\#';  .SpiritStd(@name); }
+
+
+// The '-std' list below just enumerates the names of all standard spirits.
+// In code, it's the other variable (without the '-std' suffix) that gets used. So, it's easy to override.
+@noted-spirits: @noted-spirits-std;
+@noted-spirits-std: spooky, bad, fishy, alert, good, pertinent, curious, eager, bland, dull, verbose, artisan, mentioned, hashtaggy;
+
+// In code, it's the other variable without the '-std' suffix that gets used. So, it's easy to override.
+@noted-spirit-css: @noted-spirit-css-std;
+@noted-spirit-css-std: {
+  // CSS properties applied by default to all noted spirits
+  // (note that color is "already" assigned beforehand, but you may override it here, if you wish.)
+};
+
+
+// The actual mixin that 'spits out' the CSS properties for a given standout
+//.....................................
+.Spirit(@name) {
+   // We can safely assume that @noted-color is already setup for us beforehand (by .SpiritDef)
+  color: @noted-color;
+  @noted-spirit-css();
+}
+
+
+//#################################################
+// Styling Examples
+//#################################################
+
+//=====================================
+// EXAMPLE: Styling spirits
+//.....................................
+// Here's in an example of how you could extend/override the styling of a particular spirit.
+// (This would work for also standard spirits as well as any custom ones; as long as the name matches)
+//.....................................
+// .Spirit(good)  {
+//   background-color: #DACEA0;  // gray
+// }
+
+//=====================================
+// EXAMPLE: Registering custom spirits
+//.....................................
+// Here is an example of how you would "register" any additional spirits.
+// (you could also additinally call SpiritDef in order to assign specific CSS properties)
+//.....................................
+// .NotedSpirits() {
+//   .NotedSpirit(nanik);
+// }

@@ -1,13 +1,13 @@
+//out: ../tmp/noted.css
 
 // The order of @imports is !@IMPORTANT.
 // This way, we are sure to have our special variables defined (),
 // but also that they may be overridden by the current syntax theme (if any syntax theme ventures out to support 'language-noted', they can )
-@import (once)      "syntax-variables-noted";
-@import (once)      "syntax-noted";
+@import (once)      "settings-noted";
 @import (optional)  "syntax-variables";       // Your theme's <syntax-variables> could easily override the falbacks defined in this package/
-@import (optional)  "syntax-override-noted";  // If you fancy more complex (e.g. structural) overrides, here's a place where you could do that.
+@import (once)      "syntax-noted";
+@import (optional)  "syntax-overrides-noted";  // If you fancy more complex (e.g. structural) overrides, here's a place where you could do that.
                                               // You need to create that file and make sure it is reachable from here.
-
 
 atom-text-editor:not(.mini) {
   .HiliteNoted();

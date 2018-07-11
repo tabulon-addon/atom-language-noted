@@ -7,6 +7,9 @@
     "atom": "*",
     "node": "*"
   },
+
+  "styles": [ "noted.less" ],
+
   "homepage": "https://github.com/tabulon-ext/atom-language-noted",
   "repository": {
     "type": "git",

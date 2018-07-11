@@ -10,14 +10,7 @@
 
 //.....................................
 .Hilite( @stuff: {} ) {
-  .Registered();
   &.syntax-- {
     @stuff();
   }
 }
-
-
-//.....................................
-// Below are synonyms for clarifying the intention.
-.Register()   {};
-.Registered() { .Register(); }

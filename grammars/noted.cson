@@ -2,21 +2,14 @@ scopeName: 'text.text.noted'
 name: 'NOTED'
 injectionSelector: 'comment, text.plain'
 patterns: [
-  { include: '#radar' }
   { include: '#notelet' }
+  { include: '#radar'   }
 ]
 
 repository: {
-  radar: {
-    match: '<(ra?dar:/(?:[/](?:problems?|issues?|tickets?|bug-reports?|bugs?|reports?))/(?:[&0-9]+))>'
-    name: 'storage.type.class.radar.spirit.pertinent.text.noted'
-    captures:
-      1: name: 'markup.underline.link.radar.spirit.pertinent.text.noted'
-  }
-
   notelet: {
-    comment: '<       <<<<                    > ><<<        >><<<    ><<              >>>>>  >'
-    comment: '0       1234                    4 35          52678    89X              X9761  0'
+    comment: '<       <<<<                  > ><          >><<<    ><<              >>>>>  >'
+    comment: '0       1234                  4 35          52678    89X              X9761  0'
     match:   '(?<!\\w)(((([%\\-*!>+?:.;&~#@])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))\\b'
     # Below are a bunch of tokens for a quick reference and also a brief visual test.
     #   @INVALID ~@AUTHOR @@NEUTRAL :@EAGER .@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SPOOKY
@@ -24,33 +17,24 @@ repository: {
     #   Levels -5@BAD
     #   RADAR:  <radar://issue/124>
     captures:
-      1:
-          name: 'meta.notelet.text.noted'
-         #  patterns: [
-         #    { include: '#notelet_spooky' }
-         #    { include: '#notelet_bad' }
-         #    { include: '#notelet_fishy' }
-         #    { include: '#notelet_alert' }
-         #    { include: '#notelet_good' }
-         #    { include: '#notelet_pertinent' }
-         #    { include: '#notelet_curious' }
-         #    { include: '#notelet_eager' }
-         #    { include: '#notelet_bland' }
-         #    { include: '#notelet_dull' }
-         #    { include: '#notelet_verbose' }
-         #    { include: '#notelet_artisan' }
-         #    { include: '#notelet_neutral' }
-         # ]
+      1: name: 'meta.notelet.text.noted'
       2: name: 'punctuation.definition.notelet.spirit.term.text.noted'
       3: name: 'punctuation.definition.notelet.spirit.designator.text.noted'
       4: name: 'punctuation.definition.notelet.spirit.marker.text.noted'
       5: name: 'punctuation.definition.notelet.spirit.vigor.text.noted'
       6: name: 'meta.notelet.reference.text.noted'
-#      7: name: 'storage.type.class.${1:/downcase}.text.noted'                 # lang-todo compatible scope name
       7: name: 'markup.standout.spirit-marker-${4:/downcase}.vigor-${5:/downcase}.text.noted'
       8: name: 'punctuation.definition.notelet.reftype.text.noted'
       9: name: 'meta.notelet.label.text.noted'
      10: name: 'entity.name.tag.notelet.text.noted'
+  }
+
+  # For language-TODO emulation.
+  radar: {
+    match: '<(ra?dar:/(?:[/](?:problems?|issues?|tickets?|bug-reports?|bugs?|reports?))/(?:[&0-9]+))>'
+    name: 'storage.type.class.radar.spirit.pertinent.text.noted'
+    captures:
+      1: name: 'markup.underline.link.radar.standout.spirit-pertinent.text.noted'
   }
 
 
@@ -60,99 +44,6 @@ repository: {
 # For the moment, they are copied pasted manually onto here.  http://falan.filan.com/
 # ---------------------------------------------------------
 # auto-generated BEGIN {
-
-  notelet_spooky: {
-    match: '^(((([%])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.spooky.text.noted'
-#      7: name: 'markup.standout.spirit.spooky.vigor-${5:/downcase}.text.noted'
-#      7: name: 'markup.standout.spirit-spooky.vigor-${5:/downcase}.text.noted'
-      7: name: 'markup.standout.spirit-marker-${4:/downcase}.vigor-${5:/downcase}.text.noted'
-    }
-
-  notelet_bad: {
-    match: '^(((([\\-])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.bad.text.noted'
-      7: name: 'markup.standout.spirit-bad.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_fishy: {
-    match: '^(((([*])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.fishy.text.noted'
-      7: name: 'markup.standout.spirit.fishy.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_alert: {
-    match: '^(((([!])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.alert.text.noted'
-      7: name: 'markup.standout.spirit.alert.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_good: {
-    match: '^(((([+])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.good.text.noted'
-      7: name: 'markup.standout.spirit.good.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_pertinent: {
-    match: '^(((([>])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.pertinent.text.noted'
-      7: name: 'markup.standout.spirit.pertinent.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_curious: {
-    match: '^(((([?])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.curious.text.noted'
-      7: name: 'markup.standout.spirit.curious.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_eager: {
-    match: '^(((([:])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.eager.text.noted'
-      7: name: 'markup.standout.spirit.eager.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_bland: {
-    match: '^(((([.])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.bland.text.noted'
-      7: name: 'markup.standout.spirit.bland.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_dull: {
-    match: '^(((([;])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.dull.text.noted'
-      7: name: 'markup.standout.spirit.dull.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_verbose: {
-    match: '^(((([&])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.verbose.text.noted'
-      7: name: 'markup.standout.spirit.verbose.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_artisan: {
-    match: '^(((([~])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.artisan.text.noted'
-      7: name: 'markup.standout.spirit.artisan.level-${5:/downcase}.text.noted'
-    }
-
-  notelet_neutral: {
-    match: '^(((([#@])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))$'
-    captures:
-      1: name: 'meta.notelet.spirit.neutral.text.noted'
-      7: name: 'markup.standout.spirit.neutral.level-${5:/downcase}.text.noted'
-    }
 
 # } END auto-generated
 
