@@ -1,0 +1,23 @@
+
+//---------------------------------------------------------
+// UTILITY Mixins.
+//---------------------------------------------------------
+.ForEach(@label; @in; @do: {}; @i: length(@in) ) when (@i > 0) {
+    .ForEach(@label; @in:@in; @do:@do; @i: abs(@i - 1));
+    @item: extract(@in; @i);
+    @do();
+}
+
+//.....................................
+.Hilite( @stuff: {} ) {
+  .Registered();
+  &.syntax-- {
+    @stuff();
+  }
+}
+
+
+//.....................................
+// Below are synonyms for clarifying the intention.
+.Register()   {};
+.Registered() { .Register(); }

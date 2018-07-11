@@ -1,7 +1,7 @@
 {
   "name": "language-noted",
   "version": "0.30.2",
-  "description": "TODO/FIXME style highlighting within comments and plain text in Atom, only more",
+  "description": "Mini markup language for @TODO-like syntax highlighting within plain text and comments (of any source language), without hard-coded vocabulary.",
   "license": "MIT",
   "engines": {
     "atom": "*",
@@ -15,7 +15,9 @@
   "bugs": {
     "url": "https://github.com/tabulon-ext/atom-language-noted/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+
+  },
   "devDependencies": {
     "coffeelint": "^1.10.1"
   }

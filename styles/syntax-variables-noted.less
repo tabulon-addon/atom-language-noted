@@ -1,37 +1,90 @@
-// This file has fallback variables. It specifies all syntax variables that
-// themes must implement if they include a syntax-variables.less file.
-
-// Syntax variables for 'language-noted' :-(@TODO
 //
-// The names are intentionnally chosen to be -@OMG distinct from the usual  @TAU conventions, since "language-noted" injects itself into the current
-// scope, regardless of the source language, as long as the current scope is within 'comments' and 'text-plain'; just like "language-TODO".
+//  Syntax variables for 'language-noted'
+//
+//  This file specifies all syntax variables that may used by 'language-noted' and co; and ONLY those variables.
+//
+//  Note that, this is NOT a regular 'syntax-variables' file that one might be used to see in syntax themes.
+//
+//  Particularly, it does NOT assign to any of the standard Atom syntax variables (e.g. text-color, , ...)
+//  Instead, it introduces a whole new set of syntax variables (and fallback values) that are used by 'language-noted'.
+//
+//  This way, we avoid interfering (or sharing anything) with the syntax highlighting aspects of the
+//  host [source] language.
+//
+//  This kind of strategy appears to suit quite well to parasytic guest languages such as 'noted' that inject
+//  themselves into a wide variety of scopes within almost any source [host] language.
+//
+//  The logical consequence is that syntax themes that wish to support 'language-noted' and any of its derivations
+//  would need to do so explicetely, by overriding any of the below variables directly.
+//
+// The names are intentionnally chosen to be distinct from the usual conventions,
+// since "language-noted" injects itself into the current scope, regardless of the source language, as long as
+// the current scope is within 'comments' and 'text-plain', just like "language-TODO".
 
-@syntax-color-spirit-catchy: #F9E699;
-@syntax-color-spirit-alert: #ffd569;                            // as in :  !@ALERT,   or in !@ATTENTION
-@syntax-color-spirit-fishy: #ff9800;                            // as in :  *@FISHY,   or in *@HACK
-@syntax-color-spirit-bad: #E54D73;                              // as in :  -@BAD,     or in -@OMG
-@syntax-color-spirit-spooky: #da15bc;                           // as in :  %@SPOOKY,   or in %@DEPRECATED
 
-@syntax-color-spirit-eager:#DBB2F1;                             // as in : :@EAGER,    or in  :@EAGER
-@syntax-color-spirit-curious: #2196f3;                          // as in : ?@QUESTION, or in  ?@WHY?
-@syntax-color-spirit-human: #B7EB9E;                            // as in : ~@AUTHOR,   or in  ~@JOHN
-@syntax-color-spirit-good: #4caf50;                             // as in : +@GOOD,     or in  +@DONE
-@syntax-color-spirit-neutral: #66d9ef;                          // as in :  @@NEUTRAL, or in @@INFO
+@noted-color-so-spooky: #da15bc;                           // as in :  %3@SPOOKY,   or in %@DEPRECATED
+@noted-color-so-bad: #E54D73;                              // as in :  -@BAD,      or in -@OMG
+@noted-color-so-fishy: #ff9800;                            // as in :  *@FISHY,    or in *@HACK
+@noted-color-so-alert: #ffd569;                            // as in :  !@ALERT,    or in !@ATTENTION
 
-@syntax-color-spirit-bland: #009193;                             // as in :  .@BLAND,   or in .@DOC
-@syntax-color-spirit-bland-dull: #659295;                        // as in :  ;@DULL,    or in ;@NO-WORRIES:
-@syntax-color-spirit-bland-verbose: #58737F;                     // as in :  &@VERBOSE, or in &@SIDE-NOTE:
+@noted-color-so-catchy: #F9E699;
+@noted-color-so-pertinent: fadeout(@noted-color-so-catchy, 40%);
+@noted-color-so-related: fadeout(@noted-color-so-catchy, 60%);
+
+@noted-color-so-good: #4caf50;                             // as in : +@GOOD,      or in  +@DONE
+@noted-color-so-curious: #2196f3;                          // as in : ?@QUESTION,  or in  ?@WHY?
+@noted-color-so-eager:#DBB2F1;                             // as in : :@EAGER,     or in  :@EAGER
+
+@noted-color-so-bland: #009193;                            // as in : .@BLAND,     or in .@DOC
+@noted-color-so-dull: #659295;                       // as in : ;@DULL,      or in ;@NO-WORRIES:
+@noted-color-so-verbose: #58737F;                    // as in : &@VERBOSE,   or in &@SIDE-NOTE:
+
+@noted-color-so-artisan: #9D7524;                            // as in : ~@artisan,     or in  ~@JOHN
+@noted-color-so-neutral: #66d9ef;                           // as in : @@NEUTRAL,   or in @@INFO
+@noted-color-so-mentioned: @noted-color-so-neutral;                 // with '@'
+@noted-color-so-hashtaggy: darken(@noted-color-so-neutral; 20%);     // with '#'
+
+@noted-color-so-default:  @noted-color-so-neutral;    // #DBB2F1;
+@noted-text-color: @noted-color-so-default;           // may not actually be needed... We will see.
 
 
 
-@syntax-color-noted:  #DBB2F1;
-@syntax-color-noted-radar:    @syntax-color-spirit-catchy;      //*as in :  <radar://123&278>
-@syntax-color-noted-doc:      @syntax-color-spirit-bland;       //*as in :  .@DOCUMENTATION,   or in .@RETURNS:
-@syntax-color-noted-question: @syntax-color-spirit-curious;     // as in :  ?@QUESTION, or in ?@WHY?
-@syntax-color-noted-task:     @syntax-color-spirit-eager;       //*as in :  :@EAGER,   or in :@TODO:
-@syntax-color-noted-todo:     @syntax-color-spirit-eager;       //*as in :  :@TASK,    or in :@TODO:
-@syntax-color-noted-warning:  @syntax-color-spirit-fishy;       //*as in :  *@FISHY,   or in *@WARNING:
-@syntax-color-noted-error:    @syntax-color-spirit-bad;         //*as in :  -@BAD,     or in -@ERROR:
-@syntax-color-noted-fatal:    @syntax-color-spirit-bad;         //*as in :  -@BAD,     or in -@FATAL:
-@syntax-color-noted-critical: @syntax-color-spirit-spooky;      //*as in :  -@BAD,     or in -@CRITICAL:
-@syntax-color-noted-panic:    @syntax-color-spirit-spooky;      //*as in :  %@SPOOKY,  or in %@PANIC:
+
+// This one is the fallback and it  MUST be on top
+// of the others (i.e. all the standard spirit definitions)
+.SpiritDef(@name;     @set:{} ) {
+    @marker: ~"@{name}";
+    @css: { color: @noted-color-so-default; };
+    @set();
+}
+
+.SpiritStd(@name; @colorVar: 'noted-color-so-@{name}'; @csso:{}; @set: {};)   {
+  @css: {
+    color: @@colorVar;
+    @csso();
+  };
+  @set();
+}
+
+
+.SpiritDef(default;   @set:{} )     { @marker: ~"@{name}";   .SpiritStd(@name); @set(); }
+.SpiritDef(neutral;   @set:{} )     { @marker: ~"@{name}";   .SpiritStd(@name); @set(); }
+.SpiritDef(spooky;    @set:{} )     { @marker: ~'\%';  .SpiritStd(@name); @set(); }
+.SpiritDef(bad;       @set:{} )     { @marker: ~'\-';  .SpiritStd(@name); @set(); }
+.SpiritDef(fishy;     @set:{} )     { @marker: ~'\*';  .SpiritStd(@name); @set(); }
+.SpiritDef(alert;     @set:{} )     { @marker: ~'\!';  .SpiritStd(@name); @set(); }
+.SpiritDef(good;      @set:{} )     { @marker: ~'\+';  .SpiritStd(@name); @set(); }
+.SpiritDef(pertinent; @set:{} )     { @marker: ~'\>';  .SpiritStd(@name); @set(); }
+.SpiritDef(curious;   @set:{} )     { @marker: ~'\?';  .SpiritStd(@name); @set(); }
+.SpiritDef(eager;     @set:{} )     { @marker: ~'\:';  .SpiritStd(@name); @set(); }
+.SpiritDef(bland;     @set:{} )     { @marker: ~'\.';  .SpiritStd(@name); @set(); }
+.SpiritDef(dull;      @set:{} )     { @marker: ~'\;';  .SpiritStd(@name); @set(); }
+.SpiritDef(verbose;   @set:{} )     { @marker: ~'\&';  .SpiritStd(@name); @set(); }
+.SpiritDef(artisan;   @set:{} )     { @marker: ~'\~';  .SpiritStd(@name); @set(); }
+.SpiritDef(mentioned; @set:{} )     { @marker: ~'\@';  .SpiritStd(@name); @set(); }
+.SpiritDef(hashtaggy; @set:{} )     { @marker: ~'\#';  .SpiritStd(@name); @set(); }
+
+
+.Register() {
+  @spirits: spooky, bad, fishy, alert, good, pertinent, curious, eager, bland, dull, verbose, artisan, mentioned, hashtaggy, nanik;
+}

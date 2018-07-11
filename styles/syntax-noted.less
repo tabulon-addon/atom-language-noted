@@ -1,0 +1,59 @@
+//out: ../tmp/syntax-noted.css
+
+// The order of @imports is !@IMPORTANT.
+// This way, we are sure to have our special variables defined (),
+// but also that they may be overridden by the current syntax theme (if any syntax theme ventures out to support 'language-noted', they can )
+
+// @noted-color-so-spooky: #da15bc;    // as in :  %3@SPOOKY,   or in %@DEPRECATED
+// @noted-color-so-bad: #E54D73;      // as in :  -@BAD,      or in -@OMG
+// @noted-color-so-fishy: #ff9800;    // as in :  *@FISHY,    or in *@HACK
+// @noted-color-so-alert: #ffd569;    // as in :  !@ALERT,    or in !@ATTENTION
+
+
+@import (once)      "syntax-variables-noted";
+@import (optional)  "syntax-variables";
+@import (once)      "utils-noted";
+
+
+
+//.....................................
+.HiliteNoted ( @set:{} )  {
+  .Hilite( { .Markup( @set ) });
+}
+
+
+//.....................................
+.Markup( @set:{} ) {
+  &markup {
+    @set();
+    .Hilite({ .Standout(); });
+  }
+}
+
+//.....................................
+.Standout( @set:{} ) {
+  &standout  {
+    .Registered();
+    //.Standout(@with: noselectors; @set);
+    color: @noted-color-so-default;
+    font-weight: bold;
+    @set();
+
+    .ForEach(item; @in: @spirits; @do:{  .Hilite({ .Spirit(@item) });   });
+  }
+}
+
+//.....................................
+.Spirit (@name; @set:{} )  {
+  // We need the 'call' to happen early so that we can get the @marker, if any.
+  // This is the only way I have found with the current version of Atom, which appears
+  // to be using an archaic verson of Less.js (< v3.5)
+  .SpiritDef(@name);
+
+  @ename:   ~'@{name}';
+  @emarker: ~"@{marker}";
+
+  &@{ename}, &spirit-@{ename}, &spirit-marker-@{emarker} {
+    @css();
+  }
+}

@@ -1,7 +1,9 @@
 # More TODO support in Atom
-[![macOS Build Status](https://travis-ci.org/atom/language-todo.svg?branch=master)](https://travis-ci.org/atom/language-todo)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/gcgb9m7h146lv6qp/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/language-todo/branch/master)
-[![Dependency Status](https://david-dm.org/atom/language-todo.svg)](https://david-dm.org/atom/language-todo)
+
+ Just like 'language-todo' and co, it allows constructs like @TODO, @HACK, @OMG to be highlighted; but instead of those words being
+ hard-coded into the mini-language, they are jotted down with a simple light-weight markup syntax that also carries info about the 'spirit'
+ of the tag (i.e. how it makes you feel:-). For example : @@TODO, !@ATTENTION, -@OMG, *@HACKED.
+
 
 Adds syntax highlighting to MORE such words in comments and text in Atom :
   `CHANGED`°, `CONSIDER`++, `DEBUG`°, `FATAL`++, `FIXME`°, `IDEA`, `INFO`, `LOG`, `NB`, `NOTE`, `OPTIMIZE`, `OPTIMIZED`+, `PS`, `QUESTION`, `REFACTOR`, `REMOVE`, `REVIEW`,  `TASK`, `TBD`, `TODO`, `TO DO`, `UNDONE`,
