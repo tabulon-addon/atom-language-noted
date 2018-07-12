@@ -46,6 +46,25 @@ A _notelet_ is basically a twitter-style reference (i.e. a `#hashtag` or a `@men
 
 Remember: In the end, it's the _spirit_ that matters for visually styling (i.e. highlighting) the _notelet_. [language-noted] doesn't care, and in fact doesn't even know about, the semantics of the literal expression that is being referenced. Therefore, it doesn't attempt to do anything special about that.
 
+##### Terminology
+
+As an example :
+
+````
+ !@<Hello world!>
+
+````
+
+Let's cut it into pieces:
+
+
+| term | description | remarks |
+| ---- | ----------- | ------- |
+| !    |             |         |
+
+
+
+
 #### Radar
 
 Another term that is recognized by [language-noted] is the `radar://` link, in an attempt to provide iso-funcionality with [language-todo] and its cousins.

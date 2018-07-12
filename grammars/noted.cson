@@ -13,7 +13,7 @@
   'notelet':
     'patterns': [
       {
-        'match': '(?<!\\w)(((([%_\\-*!>+?:\\,;&~#@])+)((?:[0-9])?))(([#@])((?:\\w|[\\-])+)))\\b'
+        'match': '(?<!\\w)(((([%_\\-*!>+?:\\,;&~#@])+)((?:[0-9])?))(([#@])((?:()((?:[0-9A-Za-z\\-._])+)()\\b)|(?:(")((?:[^"\\\\]|[\\\\].)*)("))|(?:(\')((?:[^\'\\\\]|[\\\\].)*)(\'))|(?:(<)((?:[^>\\\\]|[\\\\].)*)(>))|(?:(\\()((?:[^)\\\\]|[\\\\].)*)(\\)))|(?:(\\[)((?:[^\\]\\\\]|[\\\\].)*)(\\])))))'
         'captures':
           '1':
             'name': 'meta.notelet.text.noted'
@@ -29,8 +29,6 @@
             'name': 'markup.standout.spirit-marker-${4:/downcase}.vigor-${5:/downcase}.text.noted'
           '7':
             'name': 'punctuation.definition.notelet.reftype.text.noted'
-          '8':
-            'name': 'meta.notelet.label.text.noted'
       }
     ]
   'radar':
