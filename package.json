@@ -7,9 +7,9 @@
     "atom": "*",
     "node": "*"
   },
-
-  "styles": [ "noted.less" ],
-
+  "styles": [
+    "noted.less"
+  ],
   "homepage": "https://github.com/tabulon-ext/atom-language-noted",
   "repository": {
     "type": "git",
@@ -19,7 +19,8 @@
     "url": "https://github.com/tabulon-ext/atom-language-noted/issues"
   },
   "dependencies": {
-
+    "atom-syntax-tools": "^0.9.1",
+    "coffee": "^4.1.0"
   },
   "devDependencies": {
     "coffeelint": "^1.10.1"
