@@ -13,4 +13,4 @@ module.exports =
   serialize: ->
 
   registerGrammar: () ->
-    @subscriptions.add atom.grammars.addGrammar ( atom.grammars.createGrammar  __filename, gNoted.grammar() )
+    @subscriptions.add atom.grammars.addGrammar( atom.grammars.createGrammar  __filename, gNoted.grammar() )

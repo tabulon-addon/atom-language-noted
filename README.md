@@ -1,3 +1,4 @@
+[TOC]
 ## [language-noted] - Flexible :@TODO support in Atom, with a little very simple syntax of its own
 
 ##### SCREENSHOT
