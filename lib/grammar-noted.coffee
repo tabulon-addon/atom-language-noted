@@ -74,7 +74,7 @@ proto.grammar = (args...) ->
 
     comment: helper.genericGrammarComment(__filename)
     autoAppendScopeName: false    # entry for [atom-syntax-tools]
-    macros: m                     # entry for [atom-syntax-tools]. For interpolations using the {macro} syntax; something we try to abstain from, actually.
+    macros: _.simplify(m)         # entry for [atom-syntax-tools]. For interpolations using the {macro} syntax; something we try to abstain from, actually.
 
     patterns: [
       { include: '#notelet' },
