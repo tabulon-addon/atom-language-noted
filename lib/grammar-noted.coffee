@@ -2,7 +2,7 @@
   #---------------------------------------------------------------------------------------
   # Below are a bunch of tokens for a quick reference and also a brief visual test for [language-noted].
   #
-  # ~@AUTHOR @@MENTION   #@HASHTAGGY :@EAGER ,@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SHAKY _@SPOOKY @NONE
+  # ~@AUTHOR @@MENTION   #@HASHTAGGY :@EAGER ,@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SHAKY _@SPOOKY
   # ~#AUTHOR @#MENTIONNY ##HASHTAG   :#EAGER ,@BLAND ;@DULL &@VERBOSE +#GOOD ?#QUESTION  >#PERTINENT !#ALERT *#FISHY -#BAD %#SHAKY _#SPOOKY #NONE
   #
   # RADAR:  <radar://issue/124> (radar links are always rendered the same as >@PERTINENT)
@@ -49,10 +49,14 @@ exports.defaults = defaults = () -> {
     # !@NOTE: We are rarely using the macro mechanism provided by [atom-syntax-tools]
     # since we can achieve quite similar results with Coffee's string & regex interpolation.
 
+    cc_spirit_symbol  : /[%_\-*!>+?:\,;&~#@]/
+    cc_spirit_name    : /[0-9A-Za-z\-_]/
+    cc_bareword_x     : /[0-9A-Za-z\-._]/
+
     # for pun :-)
     noted : 'text.noted'                              # The SUFFIX that we append on all scopes we mark on our captures.
     poke  : 'markup.standout'                          # Our main scope PREFIX;
-    punk  : 'punctution.definition.notelet.standout'   # Punction scope PREFIX
+    punk  : 'punctuation.definition.notelet.standout'   # Punction scope PREFIX
     link  : 'markup.underline.link'
     radar : "markup.radar.standout.spirit-pertinent"
 
@@ -74,7 +78,6 @@ proto.grammar = (args...) ->
 
     comment: helper.genericGrammarComment(__filename)
     autoAppendScopeName: false    # entry for [atom-syntax-tools]
-    macros: _.simplify(m)         # entry for [atom-syntax-tools]. For interpolations using the {macro} syntax; something we try to abstain from, actually.
 
     patterns: [
       { include: '#notelet' },
@@ -82,7 +85,11 @@ proto.grammar = (args...) ->
     ]
     repository: _.resolve(m, proto.rules)
   }
-  overrides = if m.grammar? then m.grammar else {}
+  # macros for interpolations using the {macro} syntax of [atom-syntax-tools]; something we try to abstain from, actually.
+  res.macros = _.simplify(m); # !#IMPORTANT: Do this assignment here (after the rest); because the contents of 'm' may have been modified by rules.
+
+  # It's possible to override the properties of the 'grammar' object (via a shallow merge). Use with moderation.
+  overrides  = if m.grammar? then m.grammar else {}
   return _.combine( res, overrides)
 
 rule.notelet = ( m = stash() ) ->
@@ -141,43 +148,38 @@ rule.notelet = ( m = stash() ) ->
       # >>>>>>> END: standout-term
   ///
 
-  #  caps = graw.repository['notelet']['captures']
-  caps = {
-      1: name:  "meta.notelet.term.#{m.noted}"
-      2: name:  "#{m.punk}.spirit.term.#{m.noted}"
-      3: name:  "#{m.punk}.spirit.designation.#{m.noted}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
-      4: name:  "#{m.punk}.spirit.marker.#{m.noted}"
-      5: name:  "#{m.punk}.spirit.marker.#{m.noted}"
-      6: name:  "#{m.punk}.spirit.marker.#{m.noted}"
-      7: name:  "#{m.punk}.spirit.marker.#{m.noted}"
-      8: name:  "#{m.punk}.spirit.vigor.#{m.noted}"
-      9: name:  "#{m.poke}.term.#{m.gladly}.#{m.noted}"
-      10: name: "#{m.poke}.head.#{m.gladly}.#{m.noted}"
-      11: name: "#{m.poke}.body.#{m.gladly}.#{m.noted}"
-      # 12: ...
-      # !@NOTE that, to keep things DRY. the rest of the captures are set actually set ,@programmatically below;
-      # since we have a gzillian of them due to lack of support for branch resets
-  }
+
+
+  # !@NOTE that, to keep things DRY. the rest of the captures are set actually set ,@programmatically below;
+  # since we have a gzillian of them due to lack of support for branch resets
+  caps = [  # !#ARRAY
+    undefined                                   # we do NOT do anything with $0.
+    "meta.notelet.term.#{m.noted}"
+    "#{m.punk}.spirit.term.#{m.noted}"
+    "#{m.punk}.spirit.designation.#{m.noted}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
+    "#{m.punk}.spirit.marker.#{m.noted}"
+    "#{m.punk}.spirit.marker.#{m.noted}"
+    "#{m.punk}.spirit.marker.#{m.noted}"
+    "#{m.punk}.spirit.marker.#{m.noted}"
+    "#{m.punk}.spirit.vigor.#{m.noted}"
+    "#{m.poke}.term.#{m.gladly}.#{m.noted}"
+    "#{m.poke}.head.#{m.gladly}.#{m.noted}"
+    "#{m.poke}.body.#{m.gladly}.#{m.noted}"
+  ]
 
   # The following is done for the sake of DRY. It makes for more lines of code (but hop.termy more maintainable)
   # note that macros below are expanded by makeGrammar, just like the other macros elsewhere.
   core_quoted_forms = [ 'single', 'double', 'angle_bracket', 'square_bracket', 'parens' ]
   core_caps_std = [
-    { name: "#{m.punk}.core.start.#{m.noted}"     },
-    { name: "#{m.poke}.core.#{m.gladly}.#{m.noted}"  },
-    { name: "#{m.punk}.core.end.#{m.noted}"       }
+    "#{m.punk}.core.start.#{m.noted}"
+    "#{m.poke}.core.#{m.gladly}.#{m.noted}"
+    "#{m.punk}.core.end.#{m.noted}"
   ]
-  core_caps = []
-  for i in [0 ... core_quoted_forms.length + 1 ]   # + 1 for the regular bareword form.
-    core_caps = core_caps.concat core_caps_std
-
-  core_caps_start= 1 + Math.max (key for key of caps)...  # we count on the fact that the keys of the 'captures' object are always numbers.
-  for i in [0 ... core_caps.length]
-    caps[ i + core_caps_start ] = core_caps[i]  # !@NOTE that the left-hand-side is an object (not an ARRAY. That's why we need the loop instead of 'concat')
+  caps      = caps.concat _.flatten(_.times(core_quoted_forms.length + 1, () -> core_caps_std))
 
   return {
     match: m.re_notelet
-    captures: caps
+    captures: helper.buildCaptures(caps...) # !@OBJECT with numeric keys; plain string items turned into { name : <item> }
   }
 
 

@@ -1,3 +1,4 @@
+_ = require('./utils')
 helper = require('atom-syntax-tools')
 path = require('path');
 
@@ -6,6 +7,15 @@ module.exports = exports = Object.assign(helper)
 
 #exports.makeGrammar = makeGrammar = (args...) -> helper.makeGrammar args...
 exports.writeGrammar = writeGrammar = (grammar, how ='CSON' ) -> helper.makeGrammar grammar, how
+exports.buildCaptures = buildCaptures = ( args... ) ->
+  caps = args
+  caps  = caps.map (item) -> if _.isString(item) then { name: item } else item
+  capso = {}
+  for i in [0 ... caps.length ]
+    v = caps[i]
+    capso[ i ] =  v unless _.isUndefined(v)    # !@NOTE that the left-hand-side is an object with numeric keys (but not an ARRAY). That's why we need the loop.
+  return capso
+
 exports.genericGrammarComment = genericGrammarComment = (p = __filename ) ->
   basename = path.basename(p)
   [

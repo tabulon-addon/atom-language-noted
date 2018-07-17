@@ -10,37 +10,52 @@
 
 
 //.....................................
-.HiliteNoted ( @set:{} )  {
-  .NotedMarkup( @set )
+.HiliteNoted ( @csso:{} )  {
+  .Hilite ({ .Noted })
+}
+
+//.....................................
+.Noted ( @csso:{} )  {
+  .NotedRadar(@csso);
+  .Notelet(@csso);
+}
+
+//.....................................
+.NotedRadar ( @csso:{} )  {
+  &radar {
+    .Hilite({ .NotedStandout(@csso); });
+    .Hilite({ .NotedPunctuation(); });
+  }
 }
 
 
 //.....................................
-.NotedMarkup( @set:{} ) {
-  .syntax--markup {
-    .Hilite({ .NotedStandout(@set); });
+.Notelet ( @csso:{} )  {
+  &notelet {
+    .Hilite({ .NotedStandout(@csso); });
+    .Hilite({ .NotedPunctuation(); });
   }
 }
+
 
 //.....................................
 .NotedStandout( @csso:{} ) {
-  &standout  {
+  &standout {
     .Standout();
     @csso();
+    .Hilited({ .NotedSpirits(); });
   }
-  &standout  {
-    .Hilite({ .NotedSpirits(); });
-  }
+
 }
 
 //.....................................
 .NotedSpirits() {
    @spirits: @noted-spirits;
-  .ForEach(item; @in: @spirits; @do:{  .NotedSpirit(@item) });
+  .ForEach(item; @in: @spirits; @do:{  .NotedSpirit(@item)  });
 }
 
 //.....................................
-.NotedSpirit (@name; @set:{} )  {
+.NotedSpirit (@name; @csso:{} )  {
   // We need the 'call' to happen early so that we can get the @marker, if any.
   // This is the only way I have found with the current version of Atom, which appears
   // to be using an archaic verson of Less.js (< v3.5)
@@ -52,6 +67,19 @@
   &spirit-@{ename},
   &spirit-@{emarker} {
     @css();
+    @csso();
+    .Hilite ({
+      &head {
+        color: fadeout(@noted-color; 35%);
+      }
+    })
+  }
+}
+
+//.....................................
+.NotedPunctuation (@csso:{} )  {
+  &punctuation {
+    color: fadeout(@noted-color-punctuation; 50%);
   }
 }
 
