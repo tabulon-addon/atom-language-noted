@@ -58,3 +58,9 @@ exports.re_cook_quote       = re_cook_quote   = ( o = {} )          ->    # o = 
   o.content.regex ?= re_group n: o.content.capture, content: ///(?:[^#{c}\\]|[\\].)*///
   regex            = ///#{o.start.regex}#{o.content.regex}#{o.end.regex}///
   return regex
+
+# Console
+exports.dump = (data) ->
+  indentation = 2
+  transform = (k, v) -> return (if _.isRegExp(v) then '/' + v.source + '/' else v)
+  console.warn JSON.stringify(data, transform, indentation)

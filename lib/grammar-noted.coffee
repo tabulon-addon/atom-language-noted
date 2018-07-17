@@ -10,7 +10,7 @@
   # Quoted strings, either with +@"double quotes" or ;#'single quotes', as well as .+@[bracket quoted] forms should also work:
   # This includes quote-like usage of brackets and parenthehis, such as ,#<angle bracket> , #@[square bracket], and also ;#(parenthetic quotes).
   #
-  # Backslash escaping ;@"should \"work\" as expected" for all the quote-like operators mentioned above.
+  # Backslash escaping ;#"should \"work\" as expected" for all the quote-like operators mentioned above.
   #
   # Note that, in this context, brackets and parenthesis act just like quotatation marks, except the fact that the end of the quotation is marked with a
   # specific character which is distinct (yet still discernable) from the opening character. In particular,  balanced nesting of parens/brackets
@@ -64,29 +64,28 @@ exports.defaults = defaults = () -> {
     pertinently : "standout.spirit-pertinent"
   }
 
-
-
 exports.proto = proto = { rules : {} }
 rule = proto.rules  # sugar
 
 proto.grammar = (args...) ->
-  m = stash( args...)
+  m = stash( args... )
   res = {
     name: 'Noted'
     scopeName: 'text.noted'
-    injectionSelector: 'comment, text.plain'
+    injectionSelector: if m.injectionSelector? then m.injectionSelector else 'comment, text.plain'
 
     comment: helper.genericGrammarComment(__filename)
     autoAppendScopeName: false    # entry for [atom-syntax-tools]
 
-    patterns: [
-      { include: '#notelet' },
-      { include: '#radar'   }
-    ]
+    patterns: []  # filled in programmatically down below
     repository: _.resolve(m, proto.rules)
   }
+  res.patterns ?= []
+  res.patterns.push { include: '#notelet' } unless m.enableNoteletSyntax? and !m.enableNoteletSyntax  # enabled by default
+  res.patterns.push { include: '#radar'   } unless m.enableRadarSyntax?   and !m.enableRadarSyntax    # enabled by default
+
   # macros for interpolations using the {macro} syntax of [atom-syntax-tools]; something we try to abstain from, actually.
-  res.macros = _.simplify(m); # !#IMPORTANT: Do this assignment here (after the rest); because the contents of 'm' may have been modified by rules.
+  res.macros = _.simplify(m); # !#IMPORTANT: Do this assignment here (after "resolving" the rules); because the contents of 'm' may have been modified by rules.
 
   # It's possible to override the properties of the 'grammar' object (via a shallow merge). Use with moderation.
   overrides  = if m.grammar? then m.grammar else {}
@@ -96,7 +95,7 @@ rule.notelet = ( m = stash() ) ->
                                                               # !@ATTENTION: Regex "comments" are not reported as being comments by [language-coffescript.]
                                                               # Therefore [language-noted] syntax-highliting won't work within these
   m.re_notelet ?= ///
-    (?:\s|^)                                                  # NOTELET is required to be immediately preceded by whitespace or else start on a newline.
+    (?:^|\s|\W)                                               # NOTELET is required to be immediately preceded by whitespace or a non-word character, or else start on a newline.
     # <<<<<<< BEGIN: notelet-term
     (                                                         # < 1: NOTELET-term             // The entire notelet expression that has matched
       {re_notelet_spirit_term}
