@@ -3,7 +3,9 @@
 
 ##### SCREENSHOT
 
+````comment
 ![screenshot-noted]
+````
 
 ### OVERVIEW
 

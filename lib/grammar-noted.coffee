@@ -23,134 +23,124 @@
 +@NOTELET_ON_LINE_START
 ###
 
-helper = require('./grammar-tools')
+{GrammarRecipe} = require('./grammar-tools')
+helper          = require('./grammar-tools')
 _ = require('./utils')
 
-exports.run = run = () -> helper.writeGrammar grammar()                               #  generates a static CSON atom grammar and prints it on STDOUT
-exports.grammar = grammar = (args... ) -> helper.makeGrammar proto.grammar(args...)    #  PRINCIPAL routine of interest. Returns a grammar object ready to be passed to atom.grammars.createGrammar
-exports.stash = stash = (args...) -> _.stash(defaults(), args...)
-exports.defaults = defaults = () -> {
-    # Below are the defaults for the stash which is used to store macros and/or variables to be interpolated.
-    # Fore example, assuming :
-    #
-    #   m = stash(defaults(), ...)  # (where the stash() function is just a fancy way of merging overrides.)
-    #
-    # Then, anywhere in proto rules, you can use regular Coffee style string interpolation
+exports.rules   = rules   = rule = {}
+exports.regexen = regexen = re   = {}
+
+
+#exports.run = run = (args...) -> helper.writeGrammar grammar(args...)   #  generates a static CSON atom grammar and prints it on STDOUT
+exports.grammar      = grammar      = ( args... ) ->   #  PRINCIPAL routine of interest.
+  g = new Recipe(args...)
+  g.bake()  # returns an object ready to be passed to atom.grammars.createGrammar
+
+exports.Recipe       = class Recipe extends GrammarRecipe
+  _defs: {
+    # Below are some defaults used for our grammar.
+    name: 'Noted'
+    scopeName: 'text.noted'
+    injectionSelector: 'comment, text.plain'
+
+    patterns: [ # adjusted elsewhere programmatically in order to eliminate patterns that are 'disabled'.
+      { include: '#notelet' }
+      { include: '#radar'   }
+    ]
+  }
+  _vars: {
+    # Variables (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
     #   ...
     #   captures :
     #     1 : example.#{m.noted}
     #   ...
-    # The same thing may also use be written with macro expansion syntax provided by [atom-syntax-tools],
-    #  (assuming grammar.macros = m; which should normally be the case)
-    #   ...
-    #   captures :
-    #     1 : example.{noted}
-    #   ...
-    # !@NOTE: We are rarely using the macro mechanism provided by [atom-syntax-tools]
-    # since we can achieve quite similar results with Coffee's string & regex interpolation.
 
-    cc_spirit_symbol  : /[%_\-*!>+?:\,;&~#@]/
-    cc_spirit_name    : /[0-9A-Za-z\-_]/
-    cc_bareword_x     : /[0-9A-Za-z\-._]/
+    # cc_spirit_symbol  : /[%_\-*!>+?:\,;&~#@]/
+    # cc_spirit_name    : /[0-9A-Za-z\-_]/
+    # cc_bareword_x     : /[0-9A-Za-z\-._]/
 
     # for pun :-)
-    noted : 'text.noted'                              # The SUFFIX that we append on all scopes we mark on our captures.
-    poke  : 'markup.standout'                          # Our main scope PREFIX;
-    punk  : 'punctuation.definition.notelet.standout'   # Punction scope PREFIX
-    link  : 'markup.underline.link'
-    radar : "markup.radar.standout.spirit-pertinent"
-
     gladly : 'spirit-${4:/downcase}${5:/downcase}${6:/downcase}${7:/downcase}.vigor-${8:/downcase}'
     pertinently : "standout.spirit-pertinent"
+
+    noted : 'text.noted'                                # The SUFFIX that we append on all scopes we mark on our captures.
+    poke  : 'markup.standout'                           # Our main scope PREFIX;
+    punk  : 'punctuation.definition.notelet.standout'   # Punctuation scope PREFIX
+    link  : 'markup.underline.link'
+    radar : "markup.radar.standout.spirit-pertinent"
   }
+  constructor: ( opts = {} ) ->
+    o = _.defaults( {}, opts, @_vars, @_defs, { rules: rules } )
+    super(o)  # :-)
 
-exports.proto = proto = { rules : {} }
-rule = proto.rules  # sugar
 
-proto.grammar = (args...) ->
-  m = stash( args... )
-  res = {
-    name: 'Noted'
-    scopeName: 'text.noted'
-    injectionSelector: if m.injectionSelector? then m.injectionSelector else 'comment, text.plain'
+re.notelet_term = ( m = {} ) ->
+  # see below for the definitions of these
+  re_notelet_spirit_term   = re.notelet_spirit_term(m).source
+  re_notelet_standout_term = re.notelet_standout_term(m).source
 
-    comment: helper.genericGrammarComment(__filename)
-    autoAppendScopeName: false    # entry for [atom-syntax-tools]
+  # !@NOTE: Regex "comments" are not reported as being inn "comment" scope by [language-coffescript.]
+  # Therefore [language-noted] syntax-highliting won't work within those.
 
-    patterns: []  # filled in programmatically down below
-    repository: _.resolve(m, proto.rules)
-  }
-  res.patterns ?= []
-  res.patterns.push { include: '#notelet' } unless m.enableNoteletSyntax? and !m.enableNoteletSyntax  # enabled by default
-  res.patterns.push { include: '#radar'   } unless m.enableRadarSyntax?   and !m.enableRadarSyntax    # enabled by default
-
-  # macros for interpolations using the {macro} syntax of [atom-syntax-tools]; something we try to abstain from, actually.
-  res.macros = _.simplify(m); # !#IMPORTANT: Do this assignment here (after "resolving" the rules); because the contents of 'm' may have been modified by rules.
-
-  # It's possible to override the properties of the 'grammar' object (via a shallow merge). Use with moderation.
-  overrides  = if m.grammar? then m.grammar else {}
-  return _.combine( res, overrides)
-
-rule.notelet = ( m = stash() ) ->
-                                                              # !@ATTENTION: Regex "comments" are not reported as being comments by [language-coffescript.]
-                                                              # Therefore [language-noted] syntax-highliting won't work within these
-  m.re_notelet ?= ///
-    (?:^|\s|\W)                                               # NOTELET is required to be immediately preceded by whitespace or a non-word character, or else start on a newline.
-    # <<<<<<< BEGIN: notelet-term
-    (                                                         # < 1: NOTELET-term             // The entire notelet expression that has matched
-      {re_notelet_spirit_term}
-      {re_notelet_standout_term}
-    )                                                         # > 1: NOTELET-term
-    # >>>>>>> END: notelet-term
+  ///
+  (?:^|\s|\W)                                               # NOTELET is required to be immediately preceded by whitespace or a non-word character, or else start on a newline.
+  # <<<<<<< BEGIN: notelet-term
+  (                                                         # < 1: NOTELET-term             // The entire notelet expression that has matched
+    #{re_notelet_spirit_term}
+    #{re_notelet_standout_term}
+  )                                                         # > 1: NOTELET-term
+  # >>>>>>> END: notelet-term
   ///
 
-  m.re_notelet_spirit_term ?= ///
-      # <<<<<<< BEGIN: spirit-term
-      (                                                       # < 2:  < SPIRIT-term             // Only the portion BEFORE the reftype character (#@)
-        (                                                     # < 3:    < desginator
+re.notelet_spirit_term = ( m = {} ) -> ///
+  # <<<<<<< BEGIN: spirit-term
+  (                                                       # < 2:  < SPIRIT-term             // Only the portion BEFORE the reftype character (#@)
+    (                                                     # < 3:    < desginator
 
-          (?:                                                 # !!!!    A branch reset (:| ... ) needed here, but NOT supported by JS, as explained in NOTES.
-              (?: [<]?   ([%_\-*!>+?:\,;&~#@])+?   [>]?  )    #           $4
-           |  (?: \(        ([0-9A-Za-z\-_]+)       \)   )    #           $5
-           |  (?: \[        ([0-9A-Za-z\-_]+)       \]   )    #           $6
-           |  (?: \{        ([0-9A-Za-z\-_]+)       \}   )    #           $7
-          )                                                   # ) alternation
-        )                                                     # > 3;    > desginator
-        ((?:[0-9])?)                                          # . 8:    . vigor. UNDOCUMENTED for the moment.
-      )                                                       # > 2:  > SPIRIT-term
-      # >>>>>>> END: spirit-term=
-  ///
+      (?:                                                 # !!!!    A branch reset (:| ... ) needed here, but NOT supported by JS, as explained in NOTES.
+          (?: [<]?   ([%_\-*!>+?:\,;&~#@])+?   [>]?  )    #           $4
+       |  (?: \(        ([0-9A-Za-z\-_]+)       \)   )    #           $5
+       |  (?: \[        ([0-9A-Za-z\-_]+)       \]   )    #           $6
+       |  (?: \{        ([0-9A-Za-z\-_]+)       \}   )    #           $7
+      )                                                   # ) alternation
+    )                                                     # > 3;    > desginator
+    ((?:[0-9])?)                                          # . 8:    . vigor. UNDOCUMENTED for the moment.
+  )                                                       # > 2:  > SPIRIT-term
+  # >>>>>>> END: spirit-term=
+///
 
-  m.re_notelet_standout_term = ///
-      # <<<<<<< BEGIN: standout-term
-      (                                                       # < 9:  < standout-rem
-        ([#@])                                                # . 10:    . head
-        (                                                     # < 11:    < body
+re.notelet_standout_term = ( m = {} ) -> ///
+  # <<<<<<< BEGIN: standout-term
+  (                                                       # < 9:  < standout-rem
+    ([#@])                                                # . 10:    . head
+    (                                                     # < 11:    < body
 
-          (?:                                                 # !!!!    A branch reset (:| ... ) needed here, but NOT supported by JS, as explained in NOTES.
-                                                              # As a consequence, all of the following captures are programattically marked the same in
-                                                              # consequitive triplets ('core.start' 'core' 'core.end').
+      (?:                                                 # !!!!    A branch reset (:| ... ) needed here, but NOT supported by JS, as explained in NOTES.
+                                                          # As a consequence, all of the following captures are programattically marked the same in
+                                                          # consequitive triplets ('core.start' 'core' 'core.end').
 
-              (?: (  )  ( [0-9A-Za-z\-._]+ )      (  )  \b)   # * 12, 13, 14: BAREWORD label that also accepts dashes and periods
-                                                              # // Note the EMPTY capture groups.
-                                                              # // Also note that '\b' is employed just here, and not at the very end nor with quoted expressions!
-                                                              # ============: Quote-like expressions with backslash escaping support
-            | (?: ( ')  ( (?: [^'\\]|[\\]. )*  )  ( ')   )    # * 15, 16, 17: 'Single quoted' expression
-            | (?: ( ")  ( (?: [^"\\]|[\\]. )*  )  ( ")   )    # * 18, 19, 20: "Doubled quoted" expression
+          (?: (  )  ( [0-9A-Za-z\-._]+ )      (  )  \b)   # * 12, 13, 14: BAREWORD label that also accepts dashes and periods
+                                                          # // Note the EMPTY capture groups.
+                                                          # // Also note that '\b' is employed just here, and not at the very end nor with quoted expressions!
+                                                          # ============: Quote-like expressions with backslash escaping support
+        | (?: ( ')  ( (?: [^'\\]|[\\]. )*  )  ( ')   )    # * 15, 16, 17: 'Single quoted' expression
+        | (?: ( ")  ( (?: [^"\\]|[\\]. )*  )  ( ")   )    # * 18, 19, 20: "Doubled quoted" expression
 
-            | (?: ( <)  ( (?: [^>\\]|[\\]. )*  )  ( >)   )    # * 21, 22, 23: <Angle-bracket quoted>  expression
-            | (?: (\()  ( (?: [^)\\]|[\\]. )*  )  (\))   )    # * 24, 25, 26: (Parenthesis quoted)    expression
-            | (?: (\[)  ( (?: [^\]\\]|[\\].)*  )  (\])   )    # * 27, 28, 29: (Square-bracket quoted) expression
-          )                                                   # ) ALTERNATION
-        )                                                     # > 11     > body
-      )                                                       # > 9   > standout-term
-      # >>>>>>> END: standout-term
-  ///
+        | (?: ( <)  ( (?: [^>\\]|[\\]. )*  )  ( >)   )    # * 21, 22, 23: <Angle-bracket quoted>  expression
+        | (?: (\()  ( (?: [^)\\]|[\\]. )*  )  (\))   )    # * 24, 25, 26: (Parenthesis quoted)    expression
+        | (?: (\[)  ( (?: [^\]\\]|[\\].)*  )  (\])   )    # * 27, 28, 29: (Square-bracket quoted) expression
+      )                                                   # ) ALTERNATION
+    )                                                     # > 11     > body
+  )                                                       # > 9   > standout-term
+  # >>>>>>> END: standout-term
+///
 
 
+rule.notelet = ( m = {} ) ->
+  match = _.resolve re.notelet_term(m), m
 
   # !@NOTE that, to keep things DRY. the rest of the captures are set actually set ,@programmatically below;
-  # since we have a gzillian of them due to lack of support for branch resets
+  # ( since we have a gzillian of them due to lack of support for branch resets )
   caps = [  # !#ARRAY
     undefined                                   # we do NOT do anything with $0.
     "meta.notelet.term.#{m.noted}"
@@ -177,12 +167,12 @@ rule.notelet = ( m = stash() ) ->
   caps      = caps.concat _.flatten(_.times(core_quoted_forms.length + 1, () -> core_caps_std))
 
   return {
-    match: m.re_notelet
+    match: match
     captures: helper.buildCaptures(caps...) # !@OBJECT with numeric keys; plain string items turned into { name : <item> }
   }
 
 
-rule.radar = ( m = stash() ) ->
+rule.radar = ( m = {} ) ->
   { # For language-TODO emulation.
     match: /((<)((ra?dar:\/(?:[\/](problems?|issues?|tickets?|bug-reports?|bugs?|reports?))\/([&0-9 .%;A-Aa-z_]+)))(>))/.source
     #match: '(RADAR_TEST_NOTED)'
