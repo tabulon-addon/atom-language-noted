@@ -2,7 +2,7 @@ _ = require('./utils')
 
 # Class that enables easy dynamic generation of first-mate grammars (useful for Atom language packages)
 exports.GrammarRecipe = class GrammarRecipe
-  __genericComment:
+  _genericRemarks:
     [
       "# ----------------------------------------------------------------------"
       "# ATTENTION!  If you are reading this from :"
@@ -24,30 +24,62 @@ exports.GrammarRecipe = class GrammarRecipe
       "# that damned regex in one huge line without free-spacing :)"
       "# ----------------------------------------------------------------------"
     ]
-  __defaults : { patterns: [], rules:[], repository: {}, comment: @__genericComment }
-  __props    : [
-      'comment',
-      'name', 'scopeName', 'fileTypes', 'firstLineMatch'
-      'foldingStopMarker',  'maxTokensPerLine', 'maxLineLength', 'limitLineLength'
-      'injections', 'injectionSelector',
-      'patterns', 'repository'
+  _props: [
+    'comment',
+    'name', 'scopeName', 'fileTypes', 'firstLineMatch'
+    'foldingStopMarker',  'maxTokensPerLine', 'maxLineLength', 'limitLineLength'
+    'injections', 'injectionSelector',
+    'patterns', 'repository'
   ]
-  constructor : ( opts = {} ) ->
-    { @proto, @rules, @_props}  = @stash = _.defaults {}, opts, @__defaults, { _props: @__props }
-    @proto ?= @stash?.grammar ? {}
+  props:    () -> @_props
+  remarks:  () -> @_genericRemarks
 
-    for k in @_props
+  # You may wish to override the below.
+  defs :    () -> { patterns: [], repository: {}, comment: @remarks() }
+  vars :    () -> { }
+  rules:    () -> {} # you may wish to override this!
+
+  # Generic constructor should suffice in most cases,
+  #   -- provided that you have appropriately overridden the above: e.g. defs(), vars(), rules()
+  constructor : ( opts = {} )   ->
+    # fill in defaults and options
+    { @proto, @filename }  = @stash = _.defaults {}, opts, @vars(), @defs()
+
+    # some critical defaults
+    @proto    ?= @stash?.grammar ? {}
+    @filename ?= arguments?.caller?.__filename
+
+    # fill in the properties of 'proto' (grammar), from the stash.
+    # Note that some of those properties may contain function references at this time (instead of plain values)
+    # No problem: those will be invoked when we finally 'resolve()' (bake) the grammar.
+    for k in @props()
       @proto[k] ?= @stash[k] if @stash?[k]?  # fill in any properties present in the stash
 
-    @proto.repository = _.extend( @proto?.repository ? {}, @rules )
+    # other critical defaults
+    {@name, @scopeName} = @proto
+    @disabled  = if @name? then @stash?.disable?[@name.toLowerCase()] ? false else false  # determine if the entire grammar should be disabled.
 
+    # patterns
+    switch
+      when @disabled then @proto.patterns = []  # if the entire grammar is disabled, we make sure 'patterns' is empty.
+      else
+        patterns = @proto?.patterns ? []
+        @proto.patterns   = (args... ) -> fixPatterns(patterns, args... ) # Make it into a closure, to be resolved later, when needed.
+
+    # repository
+    @proto.repository   = _.extend @proto?.repository ? {}, @rules?(@stash) ? {}
     #_.dump data: { proto: @proto, stash: @stash, props: @props}
 
-    patterns = @proto?.patterns ? []
-    @proto.patterns   = (args... ) -> fixPatterns(patterns, args... ) # Make it into a closure, to be resolved later, when needed.
-
-  resolve:      ( opts = {} ) -> _.resolve @proto, _.defaults( {}, opts, @stash )
+  resolve:      ( opts = {} )   -> _.resolve @proto, _.defaults( {}, opts, @stash )
   bake:         ( opts = {} )   -> @resolve opts   # just an alias for @resolve(...)
+
+  # atom releated routines
+  tmUpdate:     ( args... ) -> @tmRetire args... ; @tmRegister args...
+  tmRegister:   ( args... ) -> atom?.grammars?.addGrammar @tmCreate args...
+  tmCreate:     ( args... ) -> atom?.grammars?.createGrammar @filename, @resolve(args...)
+  tmRetire:     ( args... ) -> atom?.grammars?.removeGrammarForScopeName @scopeName
+
+
 
 
 exports.fixPatterns   = fixPatterns = (patterns = [], m = {}, args... ) ->
@@ -86,3 +118,57 @@ exports.buildCaptures = buildCaptures = ( args... ) ->
     v = caps[i]
     capso[ i ] =  v unless _.isUndefined(v)    # !@NOTE that the left-hand-side is an object with numeric keys (but not an ARRAY). That's why we need the loop.
   return capso
+
+exports.prescribe = prescribe = {}
+
+prescribe.wordlists = ( m = {}, re = {}, schema )  ->
+  return unless models = schema?.words
+  return unless prefix = schema?.prefix ? { mode:1, cc:/[@$]/.source }
+  return if schema?.disabled
+
+  patterns = []
+  for i in m.spirits
+    continue unless w = models?[i]
+    model = _.extend {}, { prefix }, w
+    patterns.push prescribe.wordlist( m, re, model, i)
+
+  return {patterns: patterns}
+
+prescribe.wordlist = ( m = {}, re = {}, model, mood )  ->
+  return unless w = model
+  return if w?.disabled
+
+  mood   = w?.mood  ? w?.spirit ? mood ? 'neutral'
+  truly  = m?.so?[mood] ? ''
+
+  re_words  = w?.re_words ? w?.rewords ?  w?.regex
+  re_words ?= w if _.isString(w) || _.isRegExp(w)
+  return unless re_words
+
+  pcc    = w?.prefix?.cc    || /[@#]/.source
+  pmod   = w?.prefix?.mode  || 1
+  switch
+    when (pmod & 4) != 0  then re_head = ""         # forbidden
+    when (pmod & 2) != 0  then re_head = pcc        # required
+    else
+      re_head = pcc + '?'
+
+  re_head  = _.resolve(re_head)
+  re_words = _.resolve(re_words)
+
+  return {
+    match: ///
+      (?:^|\s|\W)
+      ((                                                          # $1, $2
+        (#{re_head})                                              # $3
+        ((#{re_words}))                                           # $4, $5
+      ))
+      \b
+    ///.source
+    captures:
+      1: name: "meta.notelet.term.#{m.noted}"
+      2: name: "#{m.poke}.term.#{truly}.#{m.noted}"
+      3: name: "#{m.poke}.head.#{truly}.#{m.noted}"
+      4: name: "#{m.poke}.body.#{truly}.#{m.noted}"
+      5: name: "#{m.poke}.marrow.#{truly}.#{m.noted}"
+  } # END: return

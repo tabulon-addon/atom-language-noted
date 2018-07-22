@@ -4,42 +4,51 @@ _ = require('underscore')
 module.exports = exports = Object.assign(_)
 
 # General
-exports.resolve       = resolve       = ( it, args... )         ->
+exports.resolve       = resolve       = ( it, args... )             ->
   switch
+    when _.has(it, 'resolve') then resolve( it.resolve.call(it, args...), args...)
     when _.isFunction(it) then return resolve( it( args... ), args...)
     when _.isRegExp(it)   then return ( it.source )
     when _.isArray(it)    then return ( it.map (item) -> resolve(item, args...) )
     when _.isObject(it)
+      #return it.resolve(args...) if _.has(it, 'resolve')
       res = {}
       res[k] = resolve(v, args...) for k,v of it
       return res
 
     else return it
-exports.simpleValue   = simpleValue   = ( val )                     -> return (if _.isRegExp(val) || not _.isObject(val) then val else JSON.stringify(val) )
+exports.simpleValue   = simpleValue   = ( val )                     ->
+  return (if _.isRegExp(val) || not _.isObject(val) then val else JSON.stringify(val) )
 exports.simplify      = simplify      = ( obj = {} )                -> _.mapObject(obj, simpleValue)
 
 # Objects
 exports.combine       = combine       = ( sources... )              -> _.extend({}, sources...)
-exports.stash         = stash         = ( defaultz = {}, args... )  -> _.extend({}, defaultz, args...)
+#exports.stash         = stash         = ( defaultz = {}, args... )  -> _.extend({}, defaultz, args...)
 exports.maxNumKey     = maxNumKey     = ( obj )                     -> 1 + Math.max (key for key of obj)...
+exports.findProps     = ( props=[], args... ) ->
+  props       = if _.isArray(props) then props else _.toArray(props)
+  result      = {}
+  for key in props
+    for o in args
+      if o?[key] and o[key]?
+        result[key] = o[key];
+        break
+  return result
 exports.dittoMappings = dittoMappings = ( keys, src = {} )          ->
   keys ?= _.allKeys( src )
   mappings = {}
   for k in keys
     mappings[k] = k
   return mappings
-
 exports.mapProps      = mapProps      = ( opts = {} )               ->
-  o = _.defaults {}, opts,  {
-                              obj: {},
-                              src: undefined, dest: undefined,
-                              mappings: undefined, props: undefined,
-                              disregard: { 'empty': true, 'undefined': true }
-                              reject: (val) -> _.isUndefined(val)
-                              transform: (val) -> val   # By default, no transformation is done (so it's an 'identity transformation')
-                            }
-  # src  = o.src    ?=   ( o.obj ? {} )
-  # dest = o.dest   ?=   ( o.obj ? {} )
+  o = _.defaults {}, opts, {
+          obj: {},
+          src: undefined, dest: undefined,
+          mappings: undefined, props: undefined,
+          disregard: { 'empty': true, 'undefined': true }
+          reject: (val) -> _.isUndefined(val)
+          transform: (val) -> val   # By default, no transformation is done (so it's an 'identity transformation')
+        }
 
   { src, dest, transform, reject_src, reject_dest } = _.defaults o, {
     src: o.obj, dest: o.obj, reject_src: o.reject, reject_dest: o.reject
@@ -48,10 +57,6 @@ exports.mapProps      = mapProps      = ( opts = {} )               ->
   unless o?.mappings?
     throw "Can't guess key mappings when source and destination refer to the same object" if src == dest
     o.mappings = dittoMappings(o?.props, src)
-    # props = o?.props ? _.allKeys( src ? {} )
-    # o.mappings = {}
-    # for k in props
-    #   o.mappings[k] = k
 
   mappings = o?.mappings ? {}
   keyz = _.allKeys(mappings)
@@ -62,12 +67,8 @@ exports.mapProps      = mapProps      = ( opts = {} )               ->
     delete dest[kd]
     vs  = src?[ks]          # vs: source value
     continue if reject_src(vs, ks, src, 'src')
-#    continue if  _.isUndefined(vs) and (disregard?['undefined'] ? true)
-    #continue if  _.isEmpty(vs)     and (disregard?['empty']     ? true)
     v   = transform(vs)     # v: destination value (transformed)
-#    continue if  _.isUndefined(v) and (disregard?['undefined'] ? true)
     continue if reject_dest(v, kd, dest, 'dest')
-    #continue if  _.isEmpty(v)     and (disregard?['empty']     ? true)
     dest[kd] = v
 
   _.dump data: { dest: dest } if (o?.dump ? false)
@@ -87,15 +88,13 @@ exports.surround      = surround       = ( opts = {} )    ->    # o = options
 
   return "#{o.prefix}#{o.open}" + o.content + "#{o.close}#{o.suffix}"     #  explicit concatination for o.content, just in case it's a RegExp or something.
 
-
-
-
-
 # RegExp
-exports.re_escape_cc_char   = re_escape_cc_char  = ( c )            -> return (if contains [']', '-', '^', ',', '\\'], c then "\\" + c else c)
+exports.re_escape_cc_char = re_escape_cc_char = ( c )            ->
+  return (if contains [']', '-', '^', ',', '\\'], c then "\\" + c else c)
 exports.re_surround         = re_surround     = ( args... )         -> RegExp surround(args...)
-exports.re_group            = re_group        = ( opts = {} )       -> re_surround _.defaults( {}, opts, { opener: '()', closer: ')' } )
-exports.re_cook_quote       = re_cook_quote   = ( opts = {} )          ->    # o = options. -#<NOT yet tested!>
+exports.re_group            = re_group        = ( opts = {} )       ->
+  re_surround _.defaults( {}, opts, { opener: '()', closer: ')' } )
+exports.re_cook_quote       = re_cook_quote   = ( opts = {} )       ->    # o = options. -#<NOT yet tested!>
   o                = _.defaults {}, opts, { marker: {}, start:{}, end: {}, content: {} }
   o.marker         = _.defaults o.marker, { char: "'", capture: 0 }  # By default, it's a single quote
   o.start          = _.defaults o.start,  o.marker

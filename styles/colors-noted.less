@@ -15,6 +15,7 @@
 @noted-color-so-bad: #E54D73;                              // as in :  -@BAD,      or in -@OMG
 @noted-color-so-fishy: #ff9800;                            // as in :  *@FISHY,    or in *@HACK
 @noted-color-so-alert: #D5AD11; //#ffd569;                 // as in :  !@ALERT,    or in !@ATTENTION
+@noted-color-so-deprecated: fadeout(@noted-color-so-spooky, 50%);  // as in :  (deprecated)@DEPRECATED
 
 @noted-color-so-catchy: #F9E699;
 @noted-color-so-pertinent: #9E7FCC;
@@ -30,10 +31,10 @@
 
 @noted-color-so-artisan: #9D7524;                            // as in : ~@artisan,     or in  ~@JOHN
 @noted-color-so-neutral: #66d9ef;                           // as in : @@NEUTRAL,   or in @@INFO
-@noted-color-so-mentionny: fadeout(@noted-color-so-neutral; 20%);                  // with '@' as in @#HELLO
-@noted-color-so-hashtaggy: fadeout(darken(@noted-color-so-neutral; 20%); 20%);     // with '#' as in #@HELLO
+@noted-color-so-mentionny: fadeout(@noted-color-so-neutral, 20%);                  // with '@' as in @#HELLO
+@noted-color-so-hashtaggy: fadeout(darken(@noted-color-so-neutral, 20%), 20%);     // with '#' as in #@HELLO
 
 @noted-color-so-default:  @noted-color-so-neutral;    // #DBB2F1;
 @noted-text-color: @noted-color-so-default;                // may not actually be needed... We will see.
 
-@noted-color-punctuation: fadeout(@noted-color-so-neutral; 25%);                  // with '@' as in @#HELLO
+@noted-color-punctuation: fadeout(@noted-color-so-neutral, 25%);                  // with '@' as in @#HELLO

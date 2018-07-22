@@ -3,9 +3,10 @@ _      = require('./utils')
 
 # Utility class for dealing with configuration settings for an atom package
 exports.PkgConfig = class PkgConfig extends CompositeDisposable
-  _defaults   : { prefix: '', schema: {}, stash: {}, master: atom.config }
-  _initial    : { fetched: 0, watching: false, tunedIn: false}
-  tips        : () -> {
+  _initial:           { fetched: 0, watching: false, tunedIn: false}
+  defaults:     () -> { stash: {}, backend: atom.config }
+
+  tips:         () -> {
     onDidChange: { provokes: ['onRefreshed'] }
     onFetched:   { provokes: ['onRefreshed'] }
     onRefreshed: { }
@@ -14,16 +15,17 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
 
   constructor : (opts = {} ) ->
     super()
-    # Typically, you only need to pass the 'prefix' and 'schema', corresponding to Atom config keyPath prefix, and schema
-    { @prefix, @schema, @stash, @master }       = o = _.defaults( {}, opts, @_defaults)
-    { @fetched, @watching, @tunedIn}            = @_initial   # Props that reflect internal state. They will be ignored if passed to the constructor.
+    { @fetched, @watching, @tunedIn}                = @_initial   # Props that reflect internal state. They will be ignored if passed to the constructor.
+    { @pkgName, @prefix, @schema, @config, @stash, @backend } = o = _.defaults {}, opts, @defaults() # The only opts really needed are: 'schema' and 'prefix' (or 'pkgName')
+
+    @schema ?= @config  # synonym
+    @prefix ?= if @pkgName? then @pkgName + '.' else ''
 
     @addWatch(o.watch) if o?.watch?
 
-
   fetch:              () ->  # Get our config settings
     # for k,v of @schema
-    #   @stash[k] = @master.get(@prefix + k)
+    #   @stash[k] = @backend.get(@prefix + k)
     @refetch()
     @fetched++
     # _.dump data:{ _msg: 'Just fetched config', prefix: @prefix, schema: @schema, stash: @stash }
@@ -33,7 +35,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   refetch: ( args...) -> # lower level routine; capable of selective fetches; does NOT fire any event.
     keyz = if args? and args.length > 0 then args else _.keys(@schema)
     for k in keyz
-      @stash[k] = @master.get(@prefix + k)
+      @stash[k] = @backend.get(@prefix + k)
     return this
 
   watch:              (args...)   -> @addWatch(args...); @watching = true; return this
@@ -62,6 +64,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   notice:             (args...)               -> @takeNotice(args...)
   takeNotice:         (event, key, val, oVal)  =>
     @refetch(key) if event == 'onDidChange'
+    @recompute()  if event == 'onRefreshed'
 
     if @watching
       for callback in ( @watches?[event] ? [] )
@@ -73,12 +76,24 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
 
     return this
 
-
+  recompute:          ( h = @stash ) -> h  # Feel free to override this for recomputing calculated settings. Must return the -eventually updated- stash. It does nothing by default.
   _tuneIn:            () ->  # Register event handlers for changes to our settings
     unless @tunedIn
       for k,v of @schema # register observer callbacks (closure!)
           # '@add' is inherited from 'CompositeDisposable'
-          @add @master.onDidChange @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('onDidChange', k, val, oVal)
-          @add @master.observe     @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('observe',     k, val, oVal)
+          @add @backend.onDidChange @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('onDidChange', k, val, oVal)
+          @add @backend.observe     @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('observe',     k, val, oVal)
       @tunedIn = true
     return this
+
+
+exports.grammar =
+  tmgUpdate:     ( g = {}, args... )  ->
+     @tmgRetire   g, args...
+     @tmgRegister(g, args...) #unless g?.disabled ? false
+  tmgRegister:   ( args... )          -> atom?.grammars?.addGrammar @tmgCreate( args...)
+  tmgCreate:     ( g = {}, args... )  ->
+    filename =  g?.filename ? arguments?.caller?.__filename ? __filename
+    g = g.resolve(args...) if g?.resolve?
+    atom?.grammars?.createGrammar filename, g
+  tmgRetire:     ( g = {}, args... )  -> atom?.grammars?.removeGrammarForScopeName g.scopeName  if g?.scopeName?
