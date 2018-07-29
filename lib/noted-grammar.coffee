@@ -29,97 +29,120 @@
 +@NOTELET_ON_LINE_START
 ###
 
-#{GrammarRecipe} = require('./grammar-tools')
 helper          = require('./grammar-tools')
 _ = require('./utils')
 
-#exports.run = run = (args...) -> helper.writeGrammar grammar(args...)   #  generates a static CSON atom grammar and prints it on STDOUT
-exports.makers  = exports.maker = makers = maker = {} # for sugar & easy referral
+exports.run           = run    = (args...) -> writeOut(args...)   #  generates a static CSON atom grammar and prints it on STDOUT
+exports.rules         = rules  = rule = {} # for sugar & easy referral
 
-exports.recipe  = recipe  =  ( args... ) -> new GrammarRecipe(args...)
-exports.bake    = bake    =  ( args... ) -> g = recipe( args... ); g.bake(args...)
-exports.GrammarRecipe  = class GrammarRecipe extends helper.GrammarRecipe
-  defs: () -> _.extend {}, super(), {
+exports.recipe        = recipe        = () -> new Grammar(arguments...)
+exports.bake          = bake          = () -> g = recipe(arguments...); g.resolve(arguments...)
+exports.writeOut      = writeOut      = () -> g = recipe(arguments...); g.writeOut(arguments...)
+
+exports.spirits       = spirits       = () ->
+  """
+  alert, artisan, bad, bland, curious, default, deprecated,
+  dull, eager, fishy, good, hashtaggy, neutral, mentionny,
+  pertinent, shaky, spooky, verbose
+  """.split(/(?:[\,]|\s)+/)
+exports.spiritful     = spiritful     = (mood = 'neutral') ->  'spirit-' + mood
+exports.scopeDefs     = scopeDefs     = () ->
+  # Figure out the applicable mood (spirit) and related syntax scope
+  mood          = this?.mood              ? 'neutral'
+  gravy         = this?.spiritful?(mood)  ? spiritful(mood)
+
+  {
+    suffix: 'text.noted'
+    noted : 'text.noted'                                # The SUFFIX that we append on all scopes we mark on our captures.
+    meta  : 'meta.notelet'
+
+    # for pun :-)
+    note  : 'markup.notelet'                            # Our main scope PREFIX;
+    poke  : 'markup.notelet.standout'                   # Our main scope PREFIX that is supposed to be highlighted
+    punk  : 'punctuation.definition.notelet.standout'   # Punctuation scope PREFIX
+    link  : 'markup.underline.link'
+    radar : "markup.radar.standout.spirit-pertinent"
+
+    gladly : 'spirit-${4:/downcase}${5:/downcase}${6:/downcase}${7:/downcase}.vigor-${8:/downcase}'
+    pertinently : "standout.spirit-pertinent"
+    gravy: gravy
+  }
+exports.scopes        = scopes        = () ->
+  # Figure out the applicable mood (spirit) and related syntax scope
+  mood          = this?.mood              ? 'neutral'
+  gravy         = this?.spiritful?(mood)  ? spiritful(mood)
+
+  _.defaults {}, {mood, gravy}, scopeDefs()
+exports.standouts     = standouts     = () ->
+  so = {};
+  so[i] = 'standout.' + spiritful(i) for i in spirits()
+  return so
+
+exports.Grammar       = class Grammar extends helper.Grammar
+  constructor:          ()          -> super(arguments...)
+  scopes:               ()          -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  defs:                 ()          -> _.extend {}, super(arguments...), {
     # Below are some defaults used for our grammar.
     name: 'Noted'
     scopeName: 'text.noted'
     injectionSelector: 'comment, text.plain'
-
-    patterns: [ # adjusted elsewhere programmatically in order to eliminate patterns that are 'disabled'.
-      { include: '#notelet'   }
-      { include: '#radar'     }
-      { include: '#todoMore'  }
-    ]
   }
-  vars: () ->
-    spirit  = {}; so = {}
-    spirits = "alert, artisan, bad, bland, curious, default, deprecated, dull, eager, fishy, good, hashtaggy, neutral, mentionny, pertinent, shaky, spooky, verbose".split(/(?:[\,]|\s)+/)
+  vars:                 ()          -> _.extend {},  super(arguments...),  {
+    # Defaults for the stash (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
+    so: standouts()                # Hash
+  }
+  patterns:             ()          ->  [ # adjusted elsewhere programmatically in order to eliminate patterns that are 'disabled'.
+    { include: '#notelet'   }
+    { include: '#radar'     }
+    { include: '#todoMore'  }
+  ]
+  lexicons:             ()          -> {
+    todoMore: { # todo-more-words
+      disabled: false
+      #head: { mode:1, cc:/[@#]/.source }    # 1: Accepted but NOT required. 2 & 3: required. 4. Forbidden
+      subrules: [
+        { mood: 'deprecated', re_body: /DEPRECATED/                                                     }
+        { mood: 'bad',        re_body: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/                  }
+        { mood: 'fishy',      re_body: /WARNING|WARN|HACK/                                              }
+        { mood: 'neutral',    re_body: /NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK/   }
+      ]
+    }
+  }
+  rules:                ()          ->
+    {m, s}    =  @context(arguments...)
+    lexicons  = _.resolve( @?.lexicons, arguments...) ? {}
 
-    for i in spirits
-      spirit[i] = 'spirit-' + i
-      so[i] = 'standout.' + spirit[i]
-
-    return _.extend {}, super(),  {
-      # Defaults for the stash (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
-      #   ...
-      #   captures :
-      #     1 : example.#{m.noted}
-      #   ...
-
-      # cc_spirit_symbol  : /[%_\-*!>+?:\,;&~#@]/
-      # cc_spirit_name    : /[0-9A-Za-z\-_]/
-      # cc_bareword_x     : /[0-9A-Za-z\-._]/
-      spirits: spirits
-      spirit: spirit
-      s: spirit
-      so: so
-
-      # for pun :-)
-      gladly : 'spirit-${4:/downcase}${5:/downcase}${6:/downcase}${7:/downcase}.vigor-${8:/downcase}'
-      pertinently : "standout.spirit-pertinent"
-
-      noted : 'text.noted'                                # The SUFFIX that we append on all scopes we mark on our captures.
-      poke  : 'markup.standout'                           # Our main scope PREFIX;
-      punk  : 'punctuation.definition.notelet.standout'   # Punctuation scope PREFIX
-      link  : 'markup.underline.link'
-      radar : "markup.radar.standout.spirit-pertinent"
-
-      # more words
-      todoMore: {
-        disabled: false
-        prefix: {mode:1, cc:/[@$]/.source }    # 1: Accepted but NOT required. 3: required. 4. Forbidden
-        words: {
-          deprecated:   { rewords: /DEPRECATED/.source                                                    }
-          bad:          { rewords: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/.source                 }
-          fishy:        { rewords: /WARNING|WARN|HACK/.source                                             }
-          neutral:      { rewords: /NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK/.source  }
-        }
-      }
-
+    res = _.extend {}, super(arguments...), {
+      notelet: () -> new Notelet { m}
+      radar: ()   -> new Radar   { m }
     }
 
-  rule = {};
-  rules: () -> _.extend {}, super(), rule
+    res[k] = new Lexicon _.extend( {}, v, { m } )   for k,v of lexicons
+    return res
 
-  rule.notelet = ( m = {}, re = {} ) ->
-    re.notelet_term           ?= ( m = {} ) ->
+rule.Notelet  = class Notelet extends helper.GrammaticRule
+  constructor:  () -> super(arguments...)
+  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  match:        () ->
+    {m, s} =  @context(arguments...)
+    re_notelet_term           = () ->
       # see below for the definitions of these
-      re_notelet_spirit_term   = re.notelet_spirit_term(m).source
-      re_notelet_standout_term = re.notelet_standout_term(m).source
+      re_spirit_term   = re_notelet_spirit_term().source
+      re_standout_term = re_notelet_standout_term().source
 
       # !@NOTE: Regex "comments" are not reported as being in "comment" scope by [language-coffescript.]
-      # Therefore [language-noted] syntax-highliting won't work within those.
+      # Therefore [language-noted] syntax-highlighting won't work within those.
 
       ///
       (?:^|\s|\W)                                               # NOTELET is required to be immediately preceded by whitespace or a non-word character, or else start on a newline.
       # <<<<<<< BEGIN: notelet-term
       (                                                         # < 1: NOTELET-term             // The entire notelet expression that has matched
-        #{re_notelet_spirit_term}
-        #{re_notelet_standout_term}
+        #{re_spirit_term}
+        #{re_standout_term}
       )                                                         # > 1: NOTELET-term
       # >>>>>>> END: notelet-term
       ///
-    re.notelet_spirit_term    ?= ( m = {} ) -> ///
+    re_notelet_spirit_term    = () => ///
       # <<<<<<< BEGIN: spirit-term
       (                                                       # < 2:  < SPIRIT-term             // Only the portion BEFORE the reftype character (#@)
         (                                                     # < 3:    < desginator
@@ -135,7 +158,7 @@ exports.GrammarRecipe  = class GrammarRecipe extends helper.GrammarRecipe
       )                                                       # > 2:  > SPIRIT-term
       # >>>>>>> END: spirit-term=
     ///
-    re.notelet_standout_term  ?= ( m = {} ) -> ///
+    re_notelet_standout_term  = () => ///
       # <<<<<<< BEGIN: standout-term
       (                                                       # < 9:  < standout-rem
         ([#@])                                                # . 10:    . head
@@ -161,61 +184,65 @@ exports.GrammarRecipe  = class GrammarRecipe extends helper.GrammarRecipe
       # >>>>>>> END: standout-term
     ///
 
-    match = _.resolve re.notelet_term(m), m
-
-    # !@NOTE that, to keep things DRY. the rest of the captures are set actually set ,@programmatically below;
+    result = re_notelet_term()
+  captures:     () ->
+    # !@NOTE that, to keep things DRY, the captures are actually set ,@programmatically below;
     # ( since we have a gzillian of them due to lack of support for branch resets )
+    {m, s} =  @context(arguments...);
     caps = [  # !#ARRAY
       undefined                                   # we do NOT do anything with $0.
-      "meta.notelet.term.#{m.noted}"
-      "#{m.punk}.spirit.term.#{m.noted}"
-      "#{m.punk}.spirit.designation.#{m.noted}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
-      "#{m.punk}.spirit.marker.#{m.noted}"
-      "#{m.punk}.spirit.marker.#{m.noted}"
-      "#{m.punk}.spirit.marker.#{m.noted}"
-      "#{m.punk}.spirit.marker.#{m.noted}"
-      "#{m.punk}.spirit.vigor.#{m.noted}"
-      "#{m.poke}.term.#{m.gladly}.#{m.noted}"
-      "#{m.poke}.head.#{m.gladly}.#{m.noted}"
-      "#{m.poke}.body.#{m.gladly}.#{m.noted}"
+      "#{s.meta}.term.#{s.suffix}"
+      "#{s.punk}.spirit.term.#{s.suffix}"
+      "#{s.punk}.spirit.designation.#{s.suffix}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
+      "#{s.punk}.spirit.marker.#{s.suffix}"
+      "#{s.punk}.spirit.marker.#{s.suffix}"
+      "#{s.punk}.spirit.marker.#{s.suffix}"
+      "#{s.punk}.spirit.marker.#{s.suffix}"
+      "#{s.punk}.spirit.vigor.#{s.suffix}"
+      "#{s.poke}.term.#{s.gladly}.#{s.suffix}"
+      "#{s.poke}.head.#{s.gladly}.#{s.suffix}"
+      "#{s.poke}.body.#{s.gladly}.#{s.suffix}"
     ]
 
     # The following is done for the sake of DRY. It makes for more lines of code (but hop.termy more maintainable)
     # note that macros below are expanded by makeGrammar, just like the other macros elsewhere.
     marrow_quoted_forms = [ 'single', 'double', 'angle_bracket', 'square_bracket', 'parens' ]
     marrow_caps_std = [
-      "#{m.punk}.marrow.start.#{m.noted}"
-      "#{m.poke}.marrow.#{m.gladly}.#{m.noted}"
-      "#{m.punk}.marrow.end.#{m.noted}"
+      "#{s.punk}.marrow.start.#{s.suffix}"
+      "#{s.poke}.marrow.#{s.gladly}.#{s.suffix}"
+      "#{s.punk}.marrow.end.#{s.suffix}"
     ]
     caps      = caps.concat _.flatten(_.times(marrow_quoted_forms.length + 1, () -> marrow_caps_std))
 
-    return {
-      match: match
-      captures: helper.buildCaptures(caps...) # !@OBJECT with numeric keys; plain string items turned into { name : <item> }
-    }
-  rule.radar   = ( m = {} ) ->
-    { # For language-TODO emulation.
-      match: /((<)((ra?dar:\/(?:[\/](problems?|issues?|tickets?|bug-reports?|bugs?|reports?))\/([&0-9 .%;A-Aa-z_]+)))(>))/.source
-      #match: '(RADAR_TEST_NOTED)'
-      name: "storage.type.class.radar.#{m.pertinently}.#{m.noted}"   # This one is for language-todo/-more-words compatibility
-      captures:
-        1: name: "meta.radar.#{m.noted}"
-        2: name: "#{m.punk}.radar.start.#{m.noted}"
-        3: name: "#{m.link}.radar.body.#{m.pertinently}.#{m.noted}"  # radar.body is marked twice. This one is for language-todo/-more-words compatibility
-        4: name: "#{m.radar}.body.#{m.noted}"                    #                             And this one is in our own way.
-        5: name: "#{m.radar}.type.#{m.noted}"
-        6: name: "#{m.radar}.marrow.#{m.noted}"
-        7: name: "#{m.punk}.radar.end.#{m.noted}"
-    } # END: radar
-  rule.todoMore = ( m = {}, re = {} ) ->
-    return unless schema = m?.todoMore
-    helper.prescribe.wordlists m, re, schema
+    # return {
+    #   match: match
+    #   captures: helper.buildCaptures {caps} # !@OBJECT with numeric keys; plain string items turned into { name : <item> }
+    # } # @TODO: @FIWME: renamae to rule.notelet() once DEBUGGING is over.
 
-    # return maker.wordlist( m,
-    #                         _.extend( {}, re, { words: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/.source } ),
-    #                         m?.so?.bad
-    #                       )
+rule.Radar    = class Radar   extends helper.GrammaticRule
+  constructor:  () -> super(arguments...)
+  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  match:        () -> /((<)((ra?dar:\/(?:[\/](problems?|issues?|tickets?|bug-reports?|bugs?|reports?))\/([&0-9 .%;A-Aa-z_]+)))(>))/.source
+  name:         () ->
+    {m, s} =  @context(arguments...);
+    "storage.type.class.radar.#{s.pertinently}.#{s.suffix}"
+  captures:     () ->
+    {m, s} = @context(arguments...);
+    {
+      1: name: "#{s.meta}.radar.#{s.suffix}"
+      2: name: "#{s.punk}.radar.start.#{s.suffix}"
+      3: name: "#{s.link}.radar.body.#{s.pertinently}.#{s.suffix}"  # radar.body is marked twice. This one is for language-todo/-more-words compatibility
+      4: name: "#{s.radar}.body.#{s.suffix}"                        #                             And this one is in our own way.
+      5: name: "#{s.radar}.type.#{s.suffix}"
+      6: name: "#{s.radar}.marrow.#{s.suffix}"
+      7: name: "#{s.punk}.radar.end.#{s.suffix}"
+    } # END: radar captures
+
+rule.Lexicon  = class Lexicon extends helper.Lexicon
+  constructor:  () -> super(arguments...)
+  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+
+
 
 
 #run()   # # print out a CSON version on STDOUT - (needed only when the grammar generation happens during a build)

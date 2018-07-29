@@ -28,7 +28,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
     #   @stash[k] = @backend.get(@prefix + k)
     @refetch()
     @fetched++
-    # _.dump data:{ _msg: 'Just fetched config', prefix: @prefix, schema: @schema, stash: @stash }
+    # _.dump _msg: 'Just fetched config', prefix: @prefix, schema: @schema, stash: @stash
     @notice('onFetched')
     return this
 
@@ -87,7 +87,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
     return this
 
 
-exports.grammar =
+exports.grammatics =
   tmgUpdate:     ( g = {}, args... )  ->
      @tmgRetire   g, args...
      @tmgRegister(g, args...) #unless g?.disabled ? false

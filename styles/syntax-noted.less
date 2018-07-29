@@ -68,11 +68,15 @@
   &spirit-@{emarker} {
     @css();
     @csso();
-    .Hilite ({
-      &head {
-        color: fadeout(@noted-color; 35%);
-      }
-    })
+    &.syntax--head {
+      color: fadeout(@noted-color; 35%);
+    }
+
+    // .Hilited ({
+    //   &head {
+    //     color: fadeout(@noted-color; 35%);
+    //   }
+    // })
   }
 }
 

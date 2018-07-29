@@ -9,7 +9,7 @@ settings.PkgConfig = class PkgConfig extends atomized.PkgConfig
 
     super (h)
 
-    #_.dump(data:h)
+    #_.dump data: {stash:h}
     _.mapProps  {
                   obj: h
                   transform: (val) -> String(val)
@@ -22,7 +22,7 @@ settings.PkgConfig = class PkgConfig extends atomized.PkgConfig
                               src: h?.enable ? {}
                               transform: (val) -> if _.isObject(val) then undefined else not Boolean(val ? true)
                             }
-    _.dump data: { _msg: 'recomputed config stash', stash: h }
+    #_.dump _msg: 'recomputed CONFIG stash', data: {stash: h}
     return h
 settings.config =  schema = {              # Atom schema for our config settings.
 
@@ -49,7 +49,7 @@ settings.config =  schema = {              # Atom schema for our config settings
     properties:
       todoMore:
         order: order++, type: 'boolean', default: true
-        title: "Mimic 'todo-more-words'"
+        title: "Enable mimicing 'todo-more-words'"
         description:  [
           "default : `enabled`",
           #

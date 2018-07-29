@@ -5,35 +5,108 @@ module.exports = exports = Object.assign(_)
 
 # General
 exports.resolve       = resolve       = ( it, args... )             ->
+  #console.warn '\n.....resolving..... ';
+  #_.dump data:it
+  self = this
   switch
-    when _.has(it, 'resolve') then resolve( it.resolve.call(it, args...), args...)
-    when _.isFunction(it) then return resolve( it( args... ), args...)
-    when _.isRegExp(it)   then return ( it.source )
-    when _.isArray(it)    then return ( it.map (item) -> resolve(item, args...) )
+    when res=it?.resolve?(args...)
+      #console.warn 'Resolvable class';
+      return resolve.call(self, res, args...)
+      #return resolve.call(self, it.resolve(args...), args...)
+    when _.isFunction(it)
+      #console.warn 'Function';
+      #return it.call(self, args... )
+      resolve.call(self, it.call(self, args... ), args...)
+    when _.isRegExp(it)
+      #console.warn 'RegExp';
+      return ( it.source )
+    when _.isArray(it)
+      #console.warn 'Array';
+      return ( it.map (item) -> resolve.call(self, item, args...) )
+      # a = []
+      # for item in it
+      #   a = a.concat resolve.call(self, item, args...)
+      # return a
     when _.isObject(it)
-      #return it.resolve(args...) if _.has(it, 'resolve')
+      #console.warn 'Object';
       res = {}
-      res[k] = resolve(v, args...) for k,v of it
+      #res = _.create(it.constructor.prototype)
+      #res = _.create(it.prototype)
+      for k,v of it
+        continue if  k == 'resolve' or k == 'constructor' or k == it.constructor.name
+        continue if  v == it
+        #console.warn "\n..key: #{k}"
+        res[k] = resolve.call(it, v, args...)
       return res
 
-    else return it
+    else
+      #console.warn 'Other';
+      return it
+
 exports.simpleValue   = simpleValue   = ( val )                     ->
   return (if _.isRegExp(val) || not _.isObject(val) then val else JSON.stringify(val) )
 exports.simplify      = simplify      = ( obj = {} )                -> _.mapObject(obj, simpleValue)
 
+# Arrays
+exports.arrayify      = terse          = (args...)                   ->
+  res = []
+  for arg in args
+    a   = if _.isArray(arg) then arg else [arg]
+    res = res.concat a
+  return res
+exports.terse         = terse          = (a = [])                    -> a = _.compact(a); if a.length > 0 then a else undefined
 # Objects
 exports.combine       = combine       = ( sources... )              -> _.extend({}, sources...)
 #exports.stash         = stash         = ( defaultz = {}, args... )  -> _.extend({}, defaultz, args...)
 exports.maxNumKey     = maxNumKey     = ( obj )                     -> 1 + Math.max (key for key of obj)...
-exports.findProps     = ( props=[], args... ) ->
-  props       = if _.isArray(props) then props else _.toArray(props)
-  result      = {}
-  for key in props
-    for o in args
-      if o?[key] and o[key]?
-        result[key] = o[key];
-        break
+exports.LookupOptions = LookupOptions = class
+  constructor: ( { @specs, @flow, @mappings, @prefs } ) ->
+
+exports.findProps     = findProps     = ( )                         -> lookups(arguments...)
+exports.findProp      = findProp      = ( )                         -> lookup(arguments...)
+exports.lookup        = lookup        = ( options, args... )   ->
+  unless options instanceof LookupOptions
+    opts = new LookupOptions specs: options, prefs: { findMax: 1 }
+  else
+    opts.prefs.findMax ?= 1
+
+  result      = lookups(opts, args...)
+  kFound      = _.keys(result)
+  switch kFound.length
+    when 0 then return undefined            # nothing was found.
+    when 1 then return result[kFound[0]]    # directly return the single value found, disregarding the name (key) of the property.
+    else                                    # troubled waters...
+      throw "The 'lookup()' routine is NOT suitable for seeking multiple keys/properties. Use 'lookups()' with deconstructive assignment instead."
+
+exports.lookups       = lookups       = ( options, args... )       ->
+  {specs, flow, mappings, prefs} = if options instanceof LookupOptions then options else { specs: options, prefs: {} }
+  specs ?= mappings
+  switch
+    when _.isArray(specs)     then flow ?= specs;
+    when _.isObject(specs)    then flow ?=_.keys(specs); mappings ?= specs
+    when not specs?           then flow ?= []
+    else
+      flow ?= [specs]
+
+  flow ?= []; result = {}; found = 0; findMax = prefs?.findMax
+
+  for k in flow    # k: destination key;   v: source key(s) -- maybe an array or a scalar
+    continue unless k?
+    v = mappings?[k] ? k
+    console.warn "looking up : #{k} <- #{v}"
+    src_keys = if _.isArray(v) then v else [v]
+    for ks in src_keys
+      for o in args
+        continue unless o?
+        if o?[ks] and o[ks]?
+          val = result[k] = o[ks]
+          ++found
+          console.warn "Bingo : #{k} <- #{ks} : #{val}.  where { found: #{found}, findMax: #{findMax} }"
+          return result if findMax? and found >= findMax
+          console.warn "Breaking..."
+          break
   return result
+
 exports.dittoMappings = dittoMappings = ( keys, src = {} )          ->
   keys ?= _.allKeys( src )
   mappings = {}
@@ -75,7 +148,8 @@ exports.mapProps      = mapProps      = ( opts = {} )               ->
   return dest
 
 # Strings
-exports.surround      = surround       = ( opts = {} )    ->    # o = options
+exports.easyArray = easyArray  =  (str) -> str.split(/(?:[\,]|\s)+/)
+exports.surround   = surround       = ( opts = {} )    ->    # o = options
   o                = _.defaults {}, opts, { ignoreBlank: true, content: '', n: 0, with: '', prefix: '', suffix: '' }
   # by default, surround with nothing.
   return ''         if o.ignoreBlank and ( _.isUndefined(o.content) || _.isNull(o.content) || _.isEmpty(o.content) )
@@ -109,9 +183,57 @@ exports.re_cook_quote       = re_cook_quote   = ( opts = {} )       ->    # o = 
   o.content.regex ?= re_group n: o.content.capture, content: ///(?:[^#{c}\\]|[\\].)*///
   regex            = ///#{o.start.regex}#{o.content.regex}#{o.end.regex}///
   return regex
+exports.re_escapeString     = re_escapeString = (str) ->
+  # escape string for use in javascript regex
+  # See <http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex>
+  # Note that :   $& (in the replacer) means 'Insert the matched substring'
+  str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
+
+exports.re_build = buildRegExp = ( o, opts = {} ) ->
+  o = resolve(o, opts)
+  switch
+    when not o?           then return
+    when  _.isRegExp(o)   then return o
+    when  _.isString(o)   then return new RegExp re_escapeString(o)
+    when  _.isArray(o)    then return new RegExp o.map( item => re_escapeString(item) ).join('|')
+    when  _.isObject(o)
+      base = _.lookup ['re_base', 'base', 're_inner', 'inner', 're_cc', 'cc'], o
+      if base?    # for the moment, we only buikd from a base regex
+        base = base.source if _.isRegExp(base)
+        quantifier = o?.quantifier ?  ''
+        quantifier = '{' + quantifier + ',' + quantifier + '}' if _.isFinite(quantifier)
+        quantifier = quantifier.source if _.isRegExp(quantifier)
+        return new RegExp(base + quantifier)
+
+  throw "Don't know how to build a RegExp with the given thingy"
+
 
 # Console
-exports.dump                = dump            = ( o = {} ) ->
-  o.indent    ?= 2
-  o.transform ?= (k, v) -> return (if _.isRegExp(v) then '/' + v.source + '/' else v)
-  console.warn JSON.stringify(o.data, o.transform, o.indent)
+exports.dump                = dump            = ( opts = {} ) ->
+  opts._indent    ?= 2
+  opts._transform ?= (k, v) -> return (if _.isRegExp(v) then '/' + v.source + '/' else v)
+
+  o = _.extend(opts, opts?.data)
+  data = _.omit o, ['_indent', '_transform', '_msg', 'data']
+  msg  = o?._msg ? 'Here we go... '
+  msg += ' DUMP: ' if _.keys(data).length > 0
+  console.warn msg if msg
+  console.warn JSON.stringify(data, opts._transform, opts._indent) if _.keys(data).length > 0
+
+exports.writeOut      = writeOut     = ( opts = {} )    ->
+  { data, format, path } = opts
+  format ?= if path.match /\.cson$/ then 'CSON' else 'JSON'
+  text    = undefined
+
+  switch format
+    when 'CSON' then CSON = require "season"; text = CSON.stringify(data)
+    else
+      text = JSON.stringify(data, null, "    ")
+
+  switch
+    when path? then fs = require "fs"; fs.writeFileSync path, text
+    else
+      process.stdout.write text
+
+  return data
+  
