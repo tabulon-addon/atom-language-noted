@@ -1,4 +1,4 @@
-_ = require('./utils')
+_ = require('./thunderscore')
 
 exports.Resolvable  = class Resolvable
   constructor:   ()                 ->

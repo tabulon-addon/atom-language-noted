@@ -29,8 +29,8 @@
 +@NOTELET_ON_LINE_START
 ###
 
-helper          = require('./grammar-tools')
-_ = require('./utils')
+helper = require('./grammatics')
+_      = require('./thunderscore')
 
 exports.rules         = rules  = rule = {} # for sugar & easy referral
 

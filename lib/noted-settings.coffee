@@ -1,4 +1,4 @@
-_      = require('./utils')
+_      = require('./thunderscore')
 atomized = require './atomized'
 
 settings = exports

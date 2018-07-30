@@ -1,5 +1,5 @@
 {CompositeDisposable} = require 'atom'
-_      = require('./utils')
+_      = require('./thunderscore')
 
 # Utility class for dealing with configuration settings for an atom package
 exports.PkgConfig = class PkgConfig extends CompositeDisposable
