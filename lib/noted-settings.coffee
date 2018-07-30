@@ -4,7 +4,7 @@ atomized = require './atomized'
 settings = exports
 settings.pkgName = pkgName = 'language-noted'
 settings.PkgConfig = class PkgConfig extends atomized.PkgConfig
-  defaults: () -> _.extend {}, super(), _.pick(settings, ['pkgName', 'config'] )
+  defaults: () -> _.extended super(), _.pick(settings, ['pkgName', 'config'] )
   recompute: ( h = @stash ) ->    # Normmaly,  this routine is +#'applied' to a stash or configuration stash (@stash)
 
     super (h)

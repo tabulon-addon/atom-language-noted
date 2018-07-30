@@ -32,12 +32,13 @@
 helper          = require('./grammar-tools')
 _ = require('./utils')
 
-exports.run           = run    = (args...) -> writeOut(args...)   #  generates a static CSON atom grammar and prints it on STDOUT
 exports.rules         = rules  = rule = {} # for sugar & easy referral
 
 exports.recipe        = recipe        = () -> new Grammar(arguments...)
 exports.bake          = bake          = () -> g = recipe(arguments...); g.resolve(arguments...)
 exports.writeOut      = writeOut      = () -> g = recipe(arguments...); g.writeOut(arguments...)
+exports.run           = run           = () -> writeOut(arguments...)   #  generates a static CSON atom grammar and prints it on STDOUT
+
 
 exports.spirits       = spirits       = () ->
   """
@@ -72,7 +73,7 @@ exports.scopes        = scopes        = () ->
   mood          = this?.mood              ? 'neutral'
   gravy         = this?.spiritful?(mood)  ? spiritful(mood)
 
-  _.defaults {}, {mood, gravy}, scopeDefs()
+  _.defaulted  {mood, gravy}, scopeDefs()
 exports.standouts     = standouts     = () ->
   so = {};
   so[i] = 'standout.' + spiritful(i) for i in spirits()
@@ -80,12 +81,12 @@ exports.standouts     = standouts     = () ->
 
 exports.Grammar       = class Grammar extends helper.Grammar
   constructor:          ()          -> super(arguments...)
-  scopes:               ()          -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
-  vars:                 ()          -> _.extend {},  super(arguments...),  {
+  scopes:               ()          -> _.extended super(arguments...), scopes.call(this, arguments...)
+  vars:                 ()          -> _.extended super(arguments...),  {
     # Defaults for the stash (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
     so: standouts()                # Hash
   }
-  defs:                 ()          -> _.extend {}, super(arguments...), {
+  defs:                 ()          -> _.extended super(arguments...), {
     # Below are some defaults used for our grammar.
     name: 'Noted'
     scopeName: 'text.noted'
@@ -97,7 +98,7 @@ exports.Grammar       = class Grammar extends helper.Grammar
     { include: '#todoMore'  }
   ]
   rules:                ()          ->
-    _.extend {}, super(arguments...), {
+    _.extended super(arguments...), {
       notelet: () -> new Notelet arguments...
       radar: ()   -> new Radar   arguments...
     }
@@ -115,7 +116,7 @@ exports.Grammar       = class Grammar extends helper.Grammar
 
 rule.Notelet  = class Notelet extends helper.GrammaticRule
   constructor:  () -> super(arguments...)
-  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  scopes:       () -> _.extended super(arguments...), scopes.call(this, arguments...)
   match:        () ->
     {m, s} =  @context(arguments...)
     re_notelet_term           = () ->
@@ -209,7 +210,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
 
 rule.Radar    = class Radar   extends helper.GrammaticRule
   constructor:  () -> super(arguments...)
-  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  scopes:       () -> _.extended super(arguments...), scopes.call(this, arguments...)
   match:        () -> /((<)((ra?dar:\/(?:[\/](problems?|issues?|tickets?|bug-reports?|bugs?|reports?))\/([&0-9 .%;A-Aa-z_]+)))(>))/.source
   name:         () ->
     {m, s} =  @context(arguments...);
@@ -228,7 +229,7 @@ rule.Radar    = class Radar   extends helper.GrammaticRule
 
 rule.Lexicon  = class Lexicon extends helper.Lexicon
   constructor:  () -> super(arguments...)
-  scopes:       () -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  scopes:       () -> _.extended super(arguments...), scopes.call(this, arguments...)
 
 
 

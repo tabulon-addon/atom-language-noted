@@ -7,7 +7,7 @@ exports.Resolvable  = class Resolvable
     res = _.allKeys(this)
     _.compact res.map (item) -> if _.isFunction(item) then undefined else item
   dependencies:  ()                 -> {}
-  resolveOpts:   ()                 -> _.defaults {}, arguments...
+  resolveOpts:   ( o )              -> o
   resolvers:     ( key )            -> [key]
   resolver:      ( key )            ->
     return unless key?
@@ -23,7 +23,7 @@ exports.Resolvable  = class Resolvable
     # DEBUG
     # name_lc = @name_lc?();  _.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
 
-    o    = _.extend {}, arguments..., @resolveOpts(arguments...)
+    o    = _.extended arguments..., @resolveOpts(arguments...)
     deps = @dependencies(arguments...)
     that = this
     res = {}; done={}
@@ -83,9 +83,9 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       for k in stashies
         stashes.push _.resolve.call(obj, obj[k])
     stashes = _.compact(stashes)
-    @stash = _.defaults {},  stashes...
+    @stash = _.defaulted   stashes...
 
-    scopes = _.defaults  {},  opts?.scopes, opts?.scope, opts?.s, @stash?.scopes, @stash?.scope, @stash?.s
+    scopes = _.defaulted   opts?.scopes, opts?.scope, opts?.s, @stash?.scopes, @stash?.scope, @stash?.s
     delete @stash.scopes
     @stash.scopes = scopes if _.keys(scopes).length > 0
 
@@ -125,12 +125,12 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       soft: 'markup.other.soft'
     }, _.dittoMappings @scopeNamesCommon()
   scopes:          ()      ->
-    {scopes} = _.defaults {}, arguments..., @mstash?(arguments...), { scopes: {} }
-    _.defaults {}, scopes, @scopeDefs()
+    {scopes} = _.defaulted  arguments..., @mstash?(arguments...), { scopes: {} }
+    _.defaulted  scopes, @scopeDefs()
 
   mstash:         ( opts = {} )      ->
     o = opts;
-    zoo = _.defaults {}, o?.m, o?.stash, this?.m, this?.stash, @?.vars?()
+    zoo = _.defaulted  o?.m, o?.stash, this?.m, this?.stash, @?.vars?()
     return zoo
   context:        ()                 ->
     r = { }
@@ -161,7 +161,7 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
     for item in items
     #  _.dump _msg: 'collating...', data: {item}
       continue unless item?
-      m = _.defaults {}, item?.stash ? {}, stash ? {}
+      m = _.defaulted  item?.stash ? {}, stash ? {}
       c = if (item?.isGrammatical?() ? false) then item else new this.constructor(_.extend({}, item, {m:m}) )
       r = r.concat c if c?
 
@@ -213,7 +213,7 @@ exports.GrammaticCapture  = class GrammaticCapture extends GrammaticFragment
 exports.GrammaticRule     = class GrammaticRule extends GrammaticFragment
   constructor:    ()                  -> super(arguments...)
   ingredients:    ()                  -> _.union      super(arguments...), ['comment', 'name', 'patterns', 'include', 'match', 'captures', 'begin', 'beginCaptures', 'end', 'endCaptures', 'contentName']
-  dependencies:   ()                  -> _.extend {}, super(arguments...), { captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin' }
+  dependencies:   ()                  -> _.extended super(arguments...), { captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin' }
 
   match:          ()                  ->
   captures:       ()                  ->
@@ -265,9 +265,9 @@ exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
 # # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
 exports.Lexicon  = class Lexicon extends GrammaticRuleEasy
   constructor:    ()      -> super(arguments...)
-  defs:           ()      -> _.extend {}, super(arguments...), { re_anterior:/(?:^|\s|\W)/, re_head: /[@#]?/, re_posterior:/\b/ }
+  defs:           ()      -> _.extended super(arguments...), { re_anterior:/(?:^|\s|\W)/, re_head: /[@#]?/, re_posterior:/\b/ }
   scopes:         ()      ->
-    _.extend {}, super(arguments...), {
+    _.extended super(arguments...), {
       suffix: 'text.lexicon'
       punc: 'punctuation.lexicon'
       punk: 'punctuation.definition.lexicon'
@@ -312,7 +312,7 @@ exports.fixFragments  = fixFragments  = ( fragments, opts = {} )    ->
     when _.isObject(fragments)  then return _.mapObject fragments,           (fragment) -> fixFragment.call(this, fragment, opts)
   return fragments
 exports.fixFragment   = fixFragment   = ( fragment,  opts = {} )    ->
-  {klass} = _.defaults {}, opts, { klass: GrammaticFragment }
+  {klass} = _.defaulted  opts, { klass: GrammaticFragment }
   return unless fragment?
   fragment = _.resolve.call this, fragment, opts
   return unless fragment?

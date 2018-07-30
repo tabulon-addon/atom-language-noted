@@ -58,8 +58,8 @@ exports.arrayify      = terse          = (args...)                   ->
 exports.terse         = terse          = (a = [])                    -> a = _.compact(a); if a.length > 0 then a else undefined
 
 # Objects
-exports.def           = def            = ( sources... )              -> _.defaults {}, sources... # shorthand alias for defaulted()
-exports.defaulted     = defaulted      = ( sources... )              -> _.defaults {}, sources...
+exports.def           = def            = ( sources... )              -> _.defaults {},  sources... # shorthand alias for defaulted()
+exports.defaulted     = defaulted      = ( sources... )              -> _.defaults {},  sources...
 
 exports.extended      = extended       = ( sources... )              -> _.extend {}, sources...
 exports.combine       = combine        = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
@@ -122,7 +122,7 @@ exports.dittoMappings = dittoMappings = ( keys, src = {} )          ->
     mappings[k] = k
   return mappings
 exports.mapProps      = mapProps      = ( opts = {} )               ->
-  o = _.defaults {}, opts, {
+  o = _.defaulted  opts, {
           obj: {},
           src: undefined, dest: undefined,
           mappings: undefined, props: undefined,
@@ -158,7 +158,7 @@ exports.mapProps      = mapProps      = ( opts = {} )               ->
 # Strings
 exports.easyArray = easyArray  =  (str) -> str.split(/(?:[\,]|\s)+/)
 exports.surround   = surround       = ( opts = {} )    ->    # o = options
-  o                = _.defaults {}, opts, { ignoreBlank: true, content: '', n: 0, with: '', prefix: '', suffix: '' }
+  o                = _.defaulted  opts, { ignoreBlank: true, content: '', n: 0, with: '', prefix: '', suffix: '' }
   # by default, surround with nothing.
   return ''         if o.ignoreBlank and ( _.isUndefined(o.content) || _.isNull(o.content) || _.isEmpty(o.content) )
   return o.content  unless (n ? 0) > 0
@@ -177,7 +177,7 @@ exports.re_surround         = re_surround     = ( args... )         -> RegExp su
 exports.re_group            = re_group        = ( opts = {} )       ->
   re_surround _.defaults( {}, opts, { opener: '()', closer: ')' } )
 exports.re_cook_quote       = re_cook_quote   = ( opts = {} )       ->    # o = options. -#<NOT yet tested!>
-  o                = _.defaults {}, opts, { marker: {}, start:{}, end: {}, content: {} }
+  o                = _.defaulted  opts, { marker: {}, start:{}, end: {}, content: {} }
   o.marker         = _.defaults o.marker, { char: "'", capture: 0 }  # By default, it's a single quote
   o.start          = _.defaults o.start,  o.marker
 
