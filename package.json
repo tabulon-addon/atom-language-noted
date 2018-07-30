@@ -1,7 +1,7 @@
 {
   "name": "language-noted",
   "version": "0.30.2",
-  "description": "Mini markup language for @TODO-like syntax highlighting within plain text and comments (of any source language), without hard-coded vocabulary.",
+  "description": "Mini markup language for @TODO-like syntax highlighting within plain text and comments (of any source language), bit without a need hard-coded vocabulary.",
   "license": "MIT",
   "engines": {
     "atom": "*",
@@ -11,13 +11,13 @@
   "styles": [
     "noted.less"
   ],
-  "homepage": "https://github.com/tabulon-ext/atom-language-noted",
+  "homepage": "https://github.com/tabulon-addon/atom-language-noted",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tabulon-ext/atom-language-noted.git"
+    "url": "https://github.com/tabulon-addon/atom-language-noted.git"
   },
   "bugs": {
-    "url": "https://github.com/tabulon-ext/atom-language-noted/issues"
+    "url": "https://github.com/tabulon-addon/atom-language-noted/issues"
   },
   "dependencies": {
     "underscore": "^1.9.1"
