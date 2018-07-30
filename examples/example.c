@@ -1,5 +1,5 @@
 //
-// !@NOTE: As you can see, the hash signs below are insignificant for the [language-noted] grammar.
+// !@NOTE: As you can see, the hash signs leading the lines below are insignificant for the [language-noted] grammar.
 // All that matters is what the source language considers as a valid comment.
 //
 // # Below are a bunch of tokens for a quick reference and also a brief visual test for [language-noted].
@@ -15,7 +15,7 @@
 // #   @NONE ~@AUTHOR @@NEUTRAL :@EAGER ,@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SHAKY _@SPOOKY
 // #   #NONE ~#AUTHOR ##NEUTRAL :@EAGER ,@BLAND ;@DULL &@VERBOSE +#GOOD ?#QUESTION  >#PERTINENT !#ALERT *#FISHY -#BAD %#SHAKY _#SPOOKY
 // #   RADAR:  <radar://issue/124> (radar links are always rendered the same as >@PERTINENT)
-// #   And !@"quoted"  
+// #   And !@"quoted"
 //
 
 include <stdio.h>;
