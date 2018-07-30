@@ -81,21 +81,27 @@ exports.standouts     = standouts     = () ->
 exports.Grammar       = class Grammar extends helper.Grammar
   constructor:          ()          -> super(arguments...)
   scopes:               ()          -> _.extend {}, super(arguments...), scopes.call(this, arguments...)
+  vars:                 ()          -> _.extend {},  super(arguments...),  {
+    # Defaults for the stash (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
+    so: standouts()                # Hash
+  }
   defs:                 ()          -> _.extend {}, super(arguments...), {
     # Below are some defaults used for our grammar.
     name: 'Noted'
     scopeName: 'text.noted'
     injectionSelector: 'comment, text.plain'
   }
-  vars:                 ()          -> _.extend {},  super(arguments...),  {
-    # Defaults for the stash (usually named 'm' thoughout the code) that are used for variable interpolation (Coffee style)
-    so: standouts()                # Hash
-  }
   patterns:             ()          ->  [ # adjusted elsewhere programmatically in order to eliminate patterns that are 'disabled'.
     { include: '#notelet'   }
     { include: '#radar'     }
     { include: '#todoMore'  }
   ]
+  rules:                ()          ->
+    _.extend {}, super(arguments...), {
+      notelet: () -> new Notelet arguments...
+      radar: ()   -> new Radar   arguments...
+    }
+  lexiconClass:         ()          ->  Lexicon
   lexicons:             ()          -> {
     todoMore: { # todo-more-words
       disabled: false
@@ -108,17 +114,6 @@ exports.Grammar       = class Grammar extends helper.Grammar
       ]
     }
   }
-  rules:                ()          ->
-    {m, s}    =  @context(arguments...)
-    lexicons  = _.resolve( @?.lexicons, arguments...) ? {}
-
-    res = _.extend {}, super(arguments...), {
-      notelet: () -> new Notelet { m}
-      radar: ()   -> new Radar   { m }
-    }
-
-    res[k] = new Lexicon _.extend( {}, v, { m } )   for k,v of lexicons
-    return res
 
 rule.Notelet  = class Notelet extends helper.GrammaticRule
   constructor:  () -> super(arguments...)
@@ -191,6 +186,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
     {m, s} =  @context(arguments...);
     caps = [  # !#ARRAY
       undefined                                   # we do NOT do anything with $0.
+      #"bingo"
       "#{s.meta}.term.#{s.suffix}"
       "#{s.punk}.spirit.term.#{s.suffix}"
       "#{s.punk}.spirit.designation.#{s.suffix}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
@@ -213,11 +209,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
       "#{s.punk}.marrow.end.#{s.suffix}"
     ]
     caps      = caps.concat _.flatten(_.times(marrow_quoted_forms.length + 1, () -> marrow_caps_std))
-
-    # return {
-    #   match: match
-    #   captures: helper.buildCaptures {caps} # !@OBJECT with numeric keys; plain string items turned into { name : <item> }
-    # } # @TODO: @FIWME: renamae to rule.notelet() once DEBUGGING is over.
+    return caps
 
 rule.Radar    = class Radar   extends helper.GrammaticRule
   constructor:  () -> super(arguments...)

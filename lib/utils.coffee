@@ -9,6 +9,7 @@ exports.resolve       = resolve       = ( it, args... )             ->
   #_.dump data:it
   self = this
   switch
+    when _.isUndefined(it) then return it
     when res=it?.resolve?(args...)
       #console.warn 'Resolvable class';
       return resolve.call(self, res, args...)
@@ -38,7 +39,6 @@ exports.resolve       = resolve       = ( it, args... )             ->
         #console.warn "\n..key: #{k}"
         res[k] = resolve.call(it, v, args...)
       return res
-
     else
       #console.warn 'Other';
       return it
@@ -236,4 +236,3 @@ exports.writeOut      = writeOut     = ( opts = {} )    ->
       process.stdout.write text
 
   return data
-  

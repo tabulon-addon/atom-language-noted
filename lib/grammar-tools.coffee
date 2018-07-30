@@ -1,13 +1,30 @@
 _ = require('./utils')
 
 exports.Resolvable  = class Resolvable
-  constructor:    ()                 ->
-  ingredients:    ()                 -> _.without( _.allKeys(this), 'resolve', 'constructor', @?.constructor?.name)
-  dependencies:   ()                 -> {}
-  context:        ()                 -> _.defaults {}, arguments...
-  resolve:        ()                 ->
+  constructor:   ()                 ->
+  ingredients:   ()                 ->
+    # By default, we exclude properties that are functions (to avoid accidental side-effects), but they too can be included.
+    res = _.allKeys(this)
+    _.compact res.map (item) -> if _.isFunction(item) then undefined else item
+  dependencies:  ()                 -> {}
+  resolveOpts:   ()                 -> _.defaults {}, arguments...
+  resolvers:     ( key )            -> [key]
+  resolver:      ( key )            ->
+    return unless key?
+    return unless resolvers = @resolvers(key)
+    resolvers = [resolvers] unless _.isArray(resolvers)
+    resolvers = _.compact resolvers
+    for r in resolvers
+      return r if _.isFunction(r) or _.isObject(r)
+      res = this?[r]
+      return res if res?
+    return
+  resolve:       ()                 ->
     #_.dump _msg: "Resolving BEGINS : ...", data: {opts, this: this }
-    o    = _.extend {}, arguments..., @context(arguments...)
+    #name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
+    #_.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
+
+    o    = _.extend {}, arguments..., @resolveOpts(arguments...)
     deps = @dependencies(arguments...)
     that = this
     res = {}; done={}
@@ -22,17 +39,23 @@ exports.Resolvable  = class Resolvable
 
         #_.dump _msg: "Resolving ingredient : #{i} ..."
 
-        item = @?[i + '_x' ] ? @[i]
+        item = @resolver(i)   # @?[i + '_x' ] ? @?[i]
         continue unless item?
-        res[i] = _.resolve.call(that, item, o) #if _.isFunction(item) then item(o) else item
+        v = _.resolve.call(that, item, o)
+        res[i]  = v unless _.isUndefined(v)
+
         done[i] = true
+
+
+    name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
+    _.dump _msg: "Just resolved '#{name_lc}' : ", data:res  if name_lc == 'noted'
 
     return unless _.keys(res).length > 0
     return res
 
   writeOut:       ( o = {} )        ->
     data = @resolve(arguments...)
-    _.writeOut _.defaults( {}, {data}, o )
+    _.writeOut _.defaults( {}, {data}, arguments...)
 
 # # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
 exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
@@ -41,14 +64,20 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
   isGrammatical:  ()                 -> true
   ingredients:    ()                 -> ['comment', 'name', 'patterns']
   dependencies:   ()                 -> {}
-  constructor:    ( opts = {} )      ->
-    super( arguments... )
+  resolveOpts:    ()                 -> @context(arguments...)
+  resolvers:      ( key )            -> [ String(key) + '_x', key ] if key?
+  constructor:    ( opts )           ->
+    opts ?= {}
+    opts  = { include: opts } unless _.isObject(opts)
+
+    super()
+
     stashies = [ 'm',     'stash',  'vars'  ]
     scopies  = [ 'scopes', 'scope', 's'     ]
     specials =  _.union(stashies, scopies, ['defs'] )
 
     #_.dump _msg: 'Constructing lexicon.', data: {opts}
-    defs = _.compact _.resolve( [@?.defs, opts?.defs])
+    defs = _.compact _.resolve.call(this, [@?.defs, opts?.defs])
     o = _.extend this, defs..., _.omit(opts, specials)
 
     stashes = []
@@ -62,10 +91,30 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
     delete @stash.scopes
     @stash.scopes = scopes if _.keys(scopes).length > 0
 
-    name_lc    = String::toLowerCase(@?.name)
-    @disabled ?= name_lc? and ( @?.disable?[name_lc] or  @stash?.disable?[name_lc] )  # determine if the entire grammar should be disabled.
+  isDisabled:     ( opts = {} )      ->
+    return  @disabled unless _.isUndefined(@?.disabled)
+    return !@enabled  unless _.isUndefined(@?.enabled)
 
-  scopeDefs:      ()                ->
+    {ref}    = opts
+    m        = @mstash(opts) ? {}
+    for n in [ref, @include, @name ]
+      continue if  _.isUndefined(n)
+      name      = String(_.resolve.call(this, n, opts))
+      continue if  _.isUndefined(name)
+      nlc       = name.toLowerCase().replace(/^[#]/, '')
+      #console.warn "..... checking isDisabled(). nlc: #{nlc}, comment: #{@comment}"
+
+      disabled   = @?.disable?[nlc] ?  m?.disable?[nlc]
+      enabled    = @?.enable?[nlc]  ?  m?.enable?[nlc]
+
+      #console.warn "..... checking isDisabled(). nlc: #{nlc}, enabled:#{enabled}, disabled: #{disabled}, comment: #{@comment}"
+
+      return  disabled unless _.isUndefined(disabled)
+      return !enabled  unless _.isUndefined(enabled)
+
+    return false
+
+  scopeDefs:      ()                 ->
     {
       prefix: ''
       suffix: ''
@@ -75,7 +124,7 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       poke: 'markup.other.poke'
       soft: 'markup.other.soft'
     }
-  scopes:         ( opts = {} )     ->
+  scopes:         ( opts = {} )      ->
     o = _.defaults {}, arguments..., @mstash?(arguments...), { scopes: {} }
     scopes = _.defaults {}, opts?.scopes
 
@@ -86,29 +135,33 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       scopes[item] ?= item
     return scopes
 
-  mstash:         ( opts = {} )       ->
+  mstash:         ( opts = {} )      ->
     o = opts;
-    zoo = _.defaults {}, o?.m, o?.stash, this?.m, this?.stash, @?.vars?() #, @?.defs?() #, _.omit(o, ['m', 'stash'])  #,  ( @?.container?.mstash?(arguments...) ? {} )
+    zoo = _.defaults {}, o?.m, o?.stash, this?.m, this?.stash, @?.vars?()
     return zoo
-  context:        ()                  ->
+  context:        ()                 ->
     r = { }
     r.m = r.vars  = r.stash  = @mstash(arguments...)
     r.s = r.scope = r.scopes = @scopes(arguments...)
     return r
 
-  recipe:         ( opts = {} )       -> this # %#DEPRECATED. For backwards compatibity.
-  patterns_x:     ( opts = {} )       ->
-    return if @?.disabled
-    patterns = _.terse _.arrayify( _.resolve(@?.patterns, arguments...),
-                                    @collate(items:_.resolve(@?.subrules, arguments...), arguments...)
-                                 )
-    fixPatterns(patterns, arguments... )
+  recipe:         ( opts = {} )      -> this # %#DEPRECATED. For backwards compatibity.
+  name_x:         ()                 -> tidyScope _.resolve.call(this, @?.name, arguments...)
+  patterns_x:     ( args... )        ->
+    # name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
+    # _.dump _msg: "patterns_x() BEGINS for '#{name_lc}' ..."
 
-  collate:        ( opts = {} )       ->
-    o = _.defaults {}, opts
+    return if @isDisabled(args...)
+    p = []
+    p = _.compact p.concat _.resolve.call(this, @patterns, args...)                           if @?.patterns?
+    p = _.compact p.concat _.resolve.call(this, @collate( items:@subrules, args...), args...) if @?.subrules?
+
+    fixRules.call(this, p, args... )
+
+  collate:        ( o = {}  )        ->
     items = o?.items ? @?.subrules ? []
-    return if @disabled || !( @enabled ? true )
-    stash = @mstash(opts)
+    items = _.resolve.call(this, items, arguments...)
+    stash = @mstash(arguments...)
 
     r = []  # result
     for item in items
@@ -134,27 +187,37 @@ exports.Grammar = class Grammar extends GrammaticFragment
   ]
   ingredients:    () -> _.union super(arguments...), @_props
   comment:        () -> genericGrammarRemarks(); "Yorum" # @FIXME: During DEBUGGING, we just return a short string.
-
-  rules:          () -> { } # you may wish to override this!
   constructor:    () ->
     super(arguments...)
     @filename ?= arguments?.caller?.__filename
-    @disabled  = if @name? then @stash?.disable?[@name.toLowerCase()] ? false else false  # determine if the entire grammar should be disabled.  # Generic constructor should suffice in most cases,
 
-  # patterns:       ()   ->
-  # repository:     ()   ->
-  repository_x:   ()   ->
-    repo  = _.resolve.call(this, @?.repository, arguments... ) ? {}
-    rules = _.resolve.call(this, @?.rules, arguments... )      ? {}
-    _.extend {}, repo, rules
+  rules:          () -> {} # you may wish to override this!
+  lexicons:       () -> {}
+  lexiconClass:   () -> Lexicon
+  repository_x:   () ->
+    return if @isDisabled(arguments...)
+    repos = {
+      lexicons: { ruleClass: @lexiconClass() }
+    }
+    repo = {}
+    for k in _.union( ['repository', 'rules'], _.keys(repos) )
+      console.warn "Repo key: #{k}"
+      continue if _.isUndefined v = @?[k]
+      r = _.resolve.call this, v, arguments...
+      r = fixRules r,  _.extend( {}, arguments..., repos?[k] )
+      repo = _.defaults repo, r
 
-  # atom releated routines.
-  tmUpdate:       () -> @tmRetire arguments... ; @tmRegister arguments...
-  tmRegister:     () -> atom?.grammars?.addGrammar @tmCreate arguments...
-  tmCreate:       () -> atom?.grammars?.createGrammar @filename, @resolve( arguments... )
-  tmRetire:       () -> atom?.grammars?.removeGrammarForScopeName @scopeName
+    return repo
 
-exports.GrammaticRule  = class GrammaticRule extends GrammaticFragment
+
+exports.GrammaticCapture  = class GrammaticCapture extends GrammaticFragment
+  constructor:    (opts)              ->
+    opts ?= {}
+    opts  = { name: opts } unless _.isObject(opts)
+    super(opts)
+  ingredients:    ()                  -> _.union      super(arguments...), ['comment', 'name', 'patterns']
+
+exports.GrammaticRule     = class GrammaticRule extends GrammaticFragment
   constructor:    ()                  -> super(arguments...)
   ingredients:    ()                  -> _.union      super(arguments...), ['comment', 'name', 'patterns', 'include', 'match', 'captures', 'begin', 'beginCaptures', 'end', 'endCaptures', 'contentName']
   dependencies:   ()                  -> _.extend {}, super(arguments...), { captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin' }
@@ -165,7 +228,9 @@ exports.GrammaticRule  = class GrammaticRule extends GrammaticFragment
 
   # utilities
   buildRegexen:  ( props=[], args...  )   -> buildRegexen(this, props, args...) # call global utility routine
-  buildCaptures: ( opts = {} )            -> o = _.extend {}, opts, { caps: @captures(opts) };  buildCaptures o    # call global helper routine
+  buildCaptures: ( opts = {} )            ->
+    caps = _.resolve.call(this, @?.captures, opts);
+    buildCaptures _.defaults {caps}, opts         # call global helper routine
 
 # # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
 exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
@@ -218,12 +283,13 @@ exports.Lexicon  = class Lexicon extends GrammaticRuleEasy
 
 
 # UTILITY FUNCTIONS
-exports.tidyScope     = tidyScope     = ( scope )               ->
+exports.tidyScope     = tidyScope     = ( scope )                   ->
   return unless scope?
-  scope = scope.replace(/[.]+/g, '.') # multiple consequitive dots replace by a unique occurence
-  scope = scope.replace(/^[.]/g, '' ) # leading dot suppressed
-  scope = scope.replace(/[.]$/g, '' ) # trailing dot suppressed
-exports.buildRegexen  = buildRegexen  = (o, props)              ->
+  scope = String(scope)
+  scope = scope.replace(/[.]+/g, '.') # multiple consequitive dots are replaced by a unique occurence
+  scope = scope.replace(/^[.]/g, '' ) # leading  dot is suppressed
+  scope = scope.replace(/[.]$/g, '' ) # trailing dot is suppressed
+exports.buildRegexen  = buildRegexen  = (o, props)                  ->
   # build regexes from a bunch of properties (whose names are given by the srcProps array) of a given objet (src)
   return unless o?
   re = {}
@@ -232,47 +298,42 @@ exports.buildRegexen  = buildRegexen  = (o, props)              ->
     re[k]  ?= o?.re?[k] ? o?['re_' + k] ? if v? then _.re_build(v) else ''
     re[k]  = re[k].source if _.isRegExp(re[k])
   return re
-exports.buildCaptures = buildCaptures = ( opts = {} )           ->
-  {caps} = o = _.defaults {}, opts, { caps: [] }
-  return caps unless _.isArray(caps)
+exports.buildCaptures = buildCaptures = ( opts = {} )               ->
+  {caps} = opts
+  return fixCaptures(caps, opts) unless _.isArray(caps)
 
-  # caps  = caps.map (item) -> if _.isString(item) then { name: item } else item
   captures = {}
-  for i in [0 ... caps.length ]
-    v = caps[i]
-    switch
-      when _.isString(v) then v =  { name: v }
+  for c,i in caps
+    continue unless cap = fixCapture c, opts
+    idx = cap?.index ? cap?.idx ? cap?.i ? i
+    captures[ idx ] = cap   # !@NOTE that the left-hand-side is an object with numeric keys (but not an ARRAY). That's why we need the loop.
 
-    idx = v?.index ? v?.idx ? v?.i ? i
-    # !@NOTE that the left-hand-side is an object with numeric keys (but not an ARRAY). That's why we need the loop.
-    captures[ idx ] =  v unless _.isUndefined(v)
   return captures
-exports.fixPatterns   = fixPatterns   = ( patterns = [], m = {}, args... ) ->
-    return unless patterns
-    res = []
-    for p in patterns
-      pattern = fixPattern p, m, args...
-      continue if _.isUndefined(pattern)
-      res.push pattern
-    return res
-exports.fixPattern    = fixPattern    = ( pattern, m, args... ) ->
-    pattern = _.resolve(pattern, m, args...) unless _.isUndefined(pattern)
-    # return pattern # @@DEBUG. -@FIXME. Just remove this line when things settle.
-    switch
-      when _.isUndefined(pattern) then return pattern
-      when _.isObject(pattern)
-        return pattern unless pattern.include?
-        ref = String(pattern.include)
-      else
-        ref = String(pattern)
-        pattern = new Object()
 
-    ruleName = ref.replace(/^[#]/, '')
-    return undefined if (m?.disable?[ruleName] ? false ) or (m?.disable?[ '#' + ruleName] ? false )
+exports.fixFragments  = fixFragments  = ( fragments, opts = {} )    ->
+  return unless fragments?
+  rules = _.resolve.call this, fragments, opts
+  switch
+    when not fragments?         then return
+    when _.isArray(fragments)   then return _.terse _.compact(fragments).map (fragment) -> fixFragment.call(this, fragment, opts)
+    when _.isObject(fragments)  then return _.mapObject fragments,           (fragment) -> fixFragment.call(this, fragment, opts)
+  return fragments
+exports.fixFragment   = fixFragment   = ( fragment,  opts = {} )    ->
+  {klass} = _.defaults {}, opts, { klass: GrammaticFragment }
+  return unless fragment?
+  fragment = _.resolve.call this, fragment, opts
+  return unless fragment?
+  fragment = new klass(fragment) unless fragment instanceof GrammaticFragment
+  return if fragment.isDisabled opts
+  return  fragment
 
-    pattern.include = '#' + "#{ruleName}"
-    return  pattern
-exports.genericGrammarRemarks = genericGrammarRemarks = ()      ->
+exports.fixCaptures   = fixCaptures   = ( captures,  opts = {} )    -> fixFragments.call this, captures, _.extend( {}, opts, { klass: ( opts?.captureClass ? GrammaticCapture)  } )
+exports.fixCapture    = fixCapture    = ( capture,   opts = {} )    -> fixFragment.call  this, capture,  _.extend( {}, opts, { klass: ( opts?.captureClass ? GrammaticCapture)  } )
+
+exports.fixRules      = fixRules      = ( rules,  opts = {} )       -> fixFragments.call this, rules, _.extend( {}, opts, { klass: ( opts?.ruleClass ? GrammaticRule) } )
+exports.fixRule       = fixRule       = ( rule,   opts = {} )       -> fixFragment.call  this, rule,  _.extend( {}, opts, { klass: ( opts?.ruleClass ? GrammaticRule) } )
+
+exports.genericGrammarRemarks = genericGrammarRemarks = ()          ->
     [
       "# ----------------------------------------------------------------------"
       "# ATTENTION!  If you are reading this from :"
