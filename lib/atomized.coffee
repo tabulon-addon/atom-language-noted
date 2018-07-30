@@ -4,7 +4,7 @@ _      = require('./utils')
 # Utility class for dealing with configuration settings for an atom package
 exports.PkgConfig = class PkgConfig extends CompositeDisposable
   _initial:           { fetched: 0, watching: false, tunedIn: false}
-  defaults:     () -> { stash: {}, backend: atom.config }
+  defs:         () -> { stash: {}, backend: atom.config }
 
   tips:         () -> {
     onDidChange: { provokes: ['onRefreshed'] }
@@ -16,7 +16,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   constructor : (opts = {} ) ->
     super()
     { @fetched, @watching, @tunedIn}                = @_initial   # Props that reflect internal state. They will be ignored if passed to the constructor.
-    { @pkgName, @prefix, @schema, @config, @stash, @backend } = o = _.defaults {}, opts, @defaults() # The only opts really needed are: 'schema' and 'prefix' (or 'pkgName')
+    { @pkgName, @prefix, @schema, @config, @stash, @backend } = o = _.defaults {}, opts, @defs() # The only opts really needed are: 'schema' and 'prefix' (or 'pkgName')
 
     @schema ?= @config  # synonym
     @prefix ?= if @pkgName? then @pkgName + '.' else ''

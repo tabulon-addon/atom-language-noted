@@ -104,8 +104,6 @@ exports.Grammar       = class Grammar extends helper.Grammar
   lexiconClass:         ()          ->  Lexicon
   lexicons:             ()          -> {
     todoMore: { # todo-more-words
-      disabled: false
-      #head: { mode:1, cc:/[@#]/.source }    # 1: Accepted but NOT required. 2 & 3: required. 4. Forbidden
       subrules: [
         { mood: 'deprecated', re_body: /DEPRECATED/                                                     }
         { mood: 'bad',        re_body: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/                  }
@@ -186,7 +184,6 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
     {m, s} =  @context(arguments...);
     caps = [  # !#ARRAY
       undefined                                   # we do NOT do anything with $0.
-      #"bingo"
       "#{s.meta}.term.#{s.suffix}"
       "#{s.punk}.spirit.term.#{s.suffix}"
       "#{s.punk}.spirit.designation.#{s.suffix}"   # similar to 'marker' below, but includes the whole string in case of delimited (or repeated) marker (symbol.)
@@ -200,8 +197,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
       "#{s.poke}.body.#{s.gladly}.#{s.suffix}"
     ]
 
-    # The following is done for the sake of DRY. It makes for more lines of code (but hop.termy more maintainable)
-    # note that macros below are expanded by makeGrammar, just like the other macros elsewhere.
+    # The following is done for the sake of DRY. It makes for more lines of code (but hopefully more maintainable)
     marrow_quoted_forms = [ 'single', 'double', 'angle_bracket', 'square_bracket', 'parens' ]
     marrow_caps_std = [
       "#{s.punk}.marrow.start.#{s.suffix}"

@@ -20,9 +20,8 @@ exports.Resolvable  = class Resolvable
       return res if res?
     return
   resolve:       ()                 ->
-    #_.dump _msg: "Resolving BEGINS : ...", data: {opts, this: this }
-    #name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
-    #_.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
+    # DEBUG
+    # name_lc = @name_lc?();  _.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
 
     o    = _.extend {}, arguments..., @resolveOpts(arguments...)
     deps = @dependencies(arguments...)
@@ -46,9 +45,8 @@ exports.Resolvable  = class Resolvable
 
         done[i] = true
 
-
-    name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
-    _.dump _msg: "Just resolved '#{name_lc}' : ", data:res  if name_lc == 'noted'
+    # DEBUG
+    #name_lc = @name_lc?();  _.dump _msg: "Just resolved '#{name_lc}' : ", data:res  if ( name_lc == 'noted' )
 
     return unless _.keys(res).length > 0
     return res
@@ -114,8 +112,10 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
 
     return false
 
-  scopeDefs:      ()                 ->
-    {
+  scopeNamesCommon: ()               ->
+    ['comment', 'constant', 'entity', 'invalid', 'keyword', 'markup', 'meta', 'punctuation', 'storage', 'string', 'support', 'variable']
+  scopeDefs:       ()                ->
+    _.defaults {
       prefix: ''
       suffix: ''
       meta: 'meta'
@@ -123,17 +123,10 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       punk: 'punctuation.definition'
       poke: 'markup.other.poke'
       soft: 'markup.other.soft'
-    }
-  scopes:         ( opts = {} )      ->
-    o = _.defaults {}, arguments..., @mstash?(arguments...), { scopes: {} }
-    scopes = _.defaults {}, opts?.scopes
-
-    #_.dump _msg: 'Scopes called upon ', data: {scopes, this: this}
-
-    scopes = _.extend {}, @scopeDefs(), scopes
-    for item in ['comment', 'constant', 'entity', 'invalid', 'keyword', 'markup', 'meta', 'punctuation', 'storage', 'string', 'support', 'variable']
-      scopes[item] ?= item
-    return scopes
+    }, _.dittoMappings @scopeNamesCommon()
+  scopes:          ()      ->
+    {scopes} = _.defaults {}, arguments..., @mstash?(arguments...), { scopes: {} }
+    _.defaults {}, scopes, @scopeDefs()
 
   mstash:         ( opts = {} )      ->
     o = opts;
@@ -146,6 +139,7 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
     return r
 
   recipe:         ( opts = {} )      -> this # %#DEPRECATED. For backwards compatibity.
+  name_lc:        ()                 -> String( _.resolve.call(this, @?.name, arguments...)).toLowerCase() if @?.name?
   name_x:         ()                 -> tidyScope _.resolve.call(this, @?.name, arguments...)
   patterns_x:     ( args... )        ->
     # name_lc       = String( _.resolve.call(this, @name, arguments...)).toLowerCase()
@@ -201,7 +195,6 @@ exports.Grammar = class Grammar extends GrammaticFragment
     }
     repo = {}
     for k in _.union( ['repository', 'rules'], _.keys(repos) )
-      console.warn "Repo key: #{k}"
       continue if _.isUndefined v = @?[k]
       r = _.resolve.call this, v, arguments...
       r = fixRules r,  _.extend( {}, arguments..., repos?[k] )
@@ -273,13 +266,13 @@ exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
 exports.Lexicon  = class Lexicon extends GrammaticRuleEasy
   constructor:    ()      -> super(arguments...)
   defs:           ()      -> _.extend {}, super(arguments...), { re_anterior:/(?:^|\s|\W)/, re_head: /[@#]?/, re_posterior:/\b/ }
-  scopeDefs:      ()      ->
-    _.defaults {}, {
+  scopes:         ()      ->
+    _.extend {}, super(arguments...), {
       suffix: 'text.lexicon'
       punc: 'punctuation.lexicon'
       punk: 'punctuation.definition.lexicon'
       poke: 'markup.lexicon'
-    },  super(arguments...)
+    }
 
 
 # UTILITY FUNCTIONS
@@ -304,7 +297,7 @@ exports.buildCaptures = buildCaptures = ( opts = {} )               ->
 
   captures = {}
   for c,i in caps
-    continue unless cap = fixCapture c, opts
+    continue unless _.isDefined cap = fixCapture c, opts
     idx = cap?.index ? cap?.idx ? cap?.i ? i
     captures[ idx ] = cap   # !@NOTE that the left-hand-side is an object with numeric keys (but not an ARRAY). That's why we need the loop.
 

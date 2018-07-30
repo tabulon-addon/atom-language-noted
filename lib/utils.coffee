@@ -4,6 +4,7 @@ _ = require('underscore')
 module.exports = exports = Object.assign(_)
 
 # General
+exports.isDefined     = isDefined     = ( val )                     -> not _.isUndefined(val)
 exports.resolve       = resolve       = ( it, args... )             ->
   #console.warn '\n.....resolving..... ';
   #_.dump data:it
@@ -55,9 +56,15 @@ exports.arrayify      = terse          = (args...)                   ->
     res = res.concat a
   return res
 exports.terse         = terse          = (a = [])                    -> a = _.compact(a); if a.length > 0 then a else undefined
+
 # Objects
-exports.combine       = combine       = ( sources... )              -> _.extend({}, sources...)
-#exports.stash         = stash         = ( defaultz = {}, args... )  -> _.extend({}, defaultz, args...)
+exports.def           = def            = ( sources... )              -> _.defaults {}, sources... # shorthand alias for defaulted()
+exports.defaulted     = defaulted      = ( sources... )              -> _.defaults {}, sources...
+
+exports.extended      = extended       = ( sources... )              -> _.extend {}, sources...
+exports.combine       = combine        = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
+exports.combined      = combined       = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
+
 exports.maxNumKey     = maxNumKey     = ( obj )                     -> 1 + Math.max (key for key of obj)...
 exports.LookupOptions = LookupOptions = class
   constructor: ( { @specs, @flow, @mappings, @prefs } ) ->
@@ -107,6 +114,7 @@ exports.lookups       = lookups       = ( options, args... )       ->
           break
   return result
 
+exports.dittoMapping  = dittoMapping  = ()                          -> dittoMappings(arguments...)
 exports.dittoMappings = dittoMappings = ( keys, src = {} )          ->
   keys ?= _.allKeys( src )
   mappings = {}
@@ -214,7 +222,7 @@ exports.dump                = dump            = ( opts = {} ) ->
   opts._transform ?= (k, v) -> return (if _.isRegExp(v) then '/' + v.source + '/' else v)
 
   o = _.extend(opts, opts?.data)
-  data = _.omit o, ['_indent', '_transform', '_msg', 'data']
+  data = _.omit o, ['_indent', '_transform', '_msg', '_skip', 'data']
   msg  = o?._msg ? 'Here we go... '
   msg += ' DUMP: ' if _.keys(data).length > 0
   console.warn msg if msg
