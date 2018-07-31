@@ -1,77 +1,71 @@
 _ = require('underscore')
 
-# Start out by re-exporting our helper's stuff.   This helps encapsulate things.
-module.exports = exports = Object.assign(_)
-
 # General
-exports.isDefined     = isDefined     = ( val )                     -> not _.isUndefined(val)
-exports.resolve       = resolve       = ( it, args... )             ->
+_.isDefined         = isDefined         = ( val )                     -> not _.isUndefined(val)
+_.castArray         = castArray         = ( val )                     -> if _.isArray(val) then val else [val]
+_.resolve           = resolve           = ( it, args... )             ->
   #console.warn '\n.....resolving..... ';
-  #_.dump data:it
   self = this
   switch
-    when _.isUndefined(it) then return it
-    when res=it?.resolve?(args...)
-      #console.warn 'Resolvable class';
-      return resolve.call(self, res, args...)
-      #return resolve.call(self, it.resolve(args...), args...)
-    when _.isFunction(it)
-      #console.warn 'Function';
-      #return it.call(self, args... )
-      resolve.call(self, it.call(self, args... ), args...)
-    when _.isRegExp(it)
-      #console.warn 'RegExp';
-      return ( it.source )
-    when _.isArray(it)
-      #console.warn 'Array';
-      return ( it.map (item) -> resolve.call(self, item, args...) )
-      # a = []
-      # for item in it
-      #   a = a.concat resolve.call(self, item, args...)
-      # return a
+    when not it?                          then return it
+    when _.isFunction(it?.bake)           then return resolve.call(self, it.bake(args...), args...)
+    when _.isFunction(it)                 then return resolve.call(self, it.call(self, args... ), args...)
+    when _.isRegExp(it)                   then return ( it.source )
+    when _.isArray(it)                    then return ( it.map (item) => resolve.call(self, item, args...) )
     when _.isObject(it)
       #console.warn 'Object';
       res = {}
-      #res = _.create(it.constructor.prototype)
-      #res = _.create(it.prototype)
       for k,v of it
         continue if  k == 'resolve' or k == 'constructor' or k == it.constructor.name
         continue if  v == it
-        #console.warn "\n..key: #{k}"
-        res[k] = resolve.call(it, v, args...)
+        res[k] = resolve.call(self, v, args...)
       return res
-    else
-      #console.warn 'Other';
-      return it
-
-exports.simpleValue   = simpleValue   = ( val )                     ->
+  return it
+_.simpleValue       = simpleValue       = ( val )                     ->
   return (if _.isRegExp(val) || not _.isObject(val) then val else JSON.stringify(val) )
-exports.simplify      = simplify      = ( obj = {} )                -> _.mapObject(obj, simpleValue)
+_.simplify          = simplify          = ( obj = {} )                -> _.mapObject(obj, simpleValue)
 
 # Arrays
-exports.arrayify      = terse          = (args...)                   ->
+_.arrayify          = terse             = (args...)                   ->
   res = []
   for arg in args
     a   = if _.isArray(arg) then arg else [arg]
     res = res.concat a
   return res
-exports.terse         = terse          = (a = [])                    -> a = _.compact(a); if a.length > 0 then a else undefined
+_.terse             = terse             = (a = [])                    -> a = _.compact(a); if a.length > 0 then a else undefined
 
 # Objects
-exports.def           = def            = ( sources... )              -> _.defaults {},  sources... # shorthand alias for defaulted()
-exports.defaulted     = defaulted      = ( sources... )              -> _.defaults {},  sources...
-
-exports.extended      = extended       = ( sources... )              -> _.extend {}, sources...
-exports.combine       = combine        = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
-exports.combined      = combined       = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
-
-exports.maxNumKey     = maxNumKey     = ( obj )                     -> 1 + Math.max (key for key of obj)...
-exports.LookupOptions = LookupOptions = class
+_.def               = def               = ( sources... )              -> _.defaults {},  sources... # shorthand alias for defaulted()
+_.defaulted         = defaulted         = ( sources... )              -> _.defaults {},  sources...
+_.extended          = extended          = ( sources... )              -> _.extend {}, sources...
+_.combine           = combine           = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
+_.combined          = combined          = ( sources... )              -> _.extend {}, sources...   # synonym for extended()
+_.terso             = terso             = ( o )                       ->  if _.allKeys(o).length > 0 then o else undefined
+_.extract           = extract           = ( sources=[], keys=[] )     ->
+  # extract each value for given keys in a list of given source objects. ORDERED by: SOURCES and then KEYS.
+  sources = castArray(sources)
+  keys    = castArray(keys)
+  result  = []
+  for src in sources
+    o = src ? {}
+    result = result.concat _.map keys, (key) -> o?[key]
+  return result
+_.extract_compact   = extract_compact   = ()                          -> _.compact extract(arguments...)
+_.plucks            = plucks            = ( sources=[], keys=[] )     ->
+  # extract each value for given keys in a list of given source objects. ORDERED by: KEYS and then SOURCES.
+  sources = castArray(sources)
+  keys    = castArray(keys)
+  result  = []
+  for key in keys
+    result = result.concat _.pluck(sources, key)
+  return result
+_.plucks_compact    = plucks_compact    = ()                          -> _.compact plucks(arguments...)
+_.maxNumKey         = maxNumKey         = ( obj )                     -> 1 + Math.max (key for key of obj)...
+_.LookupOptions     = LookupOptions     = class
   constructor: ( { @specs, @flow, @mappings, @prefs } ) ->
-
-exports.findProps     = findProps     = ( )                         -> lookups(arguments...)
-exports.findProp      = findProp      = ( )                         -> lookup(arguments...)
-exports.lookup        = lookup        = ( options, args... )   ->
+_.findProps         = findProps         = ( )                         -> lookups(arguments...)
+_.findProp          = findProp          = ( )                         -> lookup(arguments...)
+_.lookup            = lookup            = ( options, args... )        ->
   unless options instanceof LookupOptions
     opts = new LookupOptions specs: options, prefs: { findMax: 1 }
   else
@@ -84,8 +78,7 @@ exports.lookup        = lookup        = ( options, args... )   ->
     when 1 then return result[kFound[0]]    # directly return the single value found, disregarding the name (key) of the property.
     else                                    # troubled waters...
       throw "The 'lookup()' routine is NOT suitable for seeking multiple keys/properties. Use 'lookups()' with deconstructive assignment instead."
-
-exports.lookups       = lookups       = ( options, args... )       ->
+_.lookups           = lookups           = ( options, args... )        ->
   {specs, flow, mappings, prefs} = if options instanceof LookupOptions then options else { specs: options, prefs: {} }
   specs ?= mappings
   switch
@@ -100,7 +93,7 @@ exports.lookups       = lookups       = ( options, args... )       ->
   for k in flow    # k: destination key;   v: source key(s) -- maybe an array or a scalar
     continue unless k?
     v = mappings?[k] ? k
-    console.warn "looking up : #{k} <- #{v}"
+    #console.warn "looking up : #{k} <- #{v}"
     src_keys = if _.isArray(v) then v else [v]
     for ks in src_keys
       for o in args
@@ -108,20 +101,19 @@ exports.lookups       = lookups       = ( options, args... )       ->
         if o?[ks] and o[ks]?
           val = result[k] = o[ks]
           ++found
-          console.warn "Bingo : #{k} <- #{ks} : #{val}.  where { found: #{found}, findMax: #{findMax} }"
+          #console.warn "Bingo : #{k} <- #{ks} : #{val}.  where { found: #{found}, findMax: #{findMax} }"
           return result if findMax? and found >= findMax
-          console.warn "Breaking..."
+          #console.warn "Breaking..."
           break
   return result
-
-exports.dittoMapping  = dittoMapping  = ()                          -> dittoMappings(arguments...)
-exports.dittoMappings = dittoMappings = ( keys, src = {} )          ->
+_.dittoMapping      = dittoMapping      = ()                          -> dittoMappings(arguments...)
+_.dittoMappings     = dittoMappings     = ( keys, src = {} )          ->
   keys ?= _.allKeys( src )
   mappings = {}
   for k in keys
     mappings[k] = k
   return mappings
-exports.mapProps      = mapProps      = ( opts = {} )               ->
+_.mapProps          = mapProps          = ( opts = {} )               ->
   o = _.defaulted  opts, {
           obj: {},
           src: undefined, dest: undefined,
@@ -156,8 +148,8 @@ exports.mapProps      = mapProps      = ( opts = {} )               ->
   return dest
 
 # Strings
-exports.easyArray = easyArray  =  (str) -> str.split(/(?:[\,]|\s)+/)
-exports.surround   = surround       = ( opts = {} )    ->    # o = options
+_.easyArray         = easyArray         =  (str) -> str.split(/(?:[\,]|\s)+/)
+_.surround          = surround          = ( opts = {} )    ->    # o = options
   o                = _.defaulted  opts, { ignoreBlank: true, content: '', n: 0, with: '', prefix: '', suffix: '' }
   # by default, surround with nothing.
   return ''         if o.ignoreBlank and ( _.isUndefined(o.content) || _.isNull(o.content) || _.isEmpty(o.content) )
@@ -171,41 +163,39 @@ exports.surround   = surround       = ( opts = {} )    ->    # o = options
   return "#{o.prefix}#{o.open}" + o.content + "#{o.close}#{o.suffix}"     #  explicit concatination for o.content, just in case it's a RegExp or something.
 
 # RegExp
-exports.re_escape_cc_char = re_escape_cc_char = ( c )            ->
+_.rex_escape_cc_char = rex_escape_cc_char = ( c )                       ->
   return (if contains [']', '-', '^', ',', '\\'], c then "\\" + c else c)
-exports.re_surround         = re_surround     = ( args... )         -> RegExp surround(args...)
-exports.re_group            = re_group        = ( opts = {} )       ->
-  re_surround _.defaults( {}, opts, { opener: '()', closer: ')' } )
-exports.re_cook_quote       = re_cook_quote   = ( opts = {} )       ->    # o = options. -#<NOT yet tested!>
+_.rex_surround       = rex_surround       = ( args... )                 -> RegExp surround(args...)
+_.rex_group          = rex_group          = ( opts = {} )               -> rex_surround _.defaults( {}, opts, { opener: '()', closer: ')' } )
+_.rex_cook_quote     = rex_cook_quote     = ( opts = {} )               -> #  -#<NOT yet tested!>
   o                = _.defaulted  opts, { marker: {}, start:{}, end: {}, content: {} }
   o.marker         = _.defaults o.marker, { char: "'", capture: 0 }  # By default, it's a single quote
   o.start          = _.defaults o.start,  o.marker
 
   for k in ['start', 'end']
     o[k]            = _.defaults o[k],    o.marker
-    c = o[k].c     ?= re_escape_cc_char o[k].char
-    o[k].regex     ?= re_group n: o[k].capture, content: ///[#{c}]///
+    c = o[k].c     ?= rex_escape_cc_char o[k].char
+    o[k].regex     ?= rex_group n: o[k].capture, content: ///[#{c}]///
 
   o.content        = _.defaults o.content, { capture: 1 }
-  c                = re_escape_cc_char( o.end.char )
-  o.content.regex ?= re_group n: o.content.capture, content: ///(?:[^#{c}\\]|[\\].)*///
+  c                = rex_escape_cc_char( o.end.char )
+  o.content.regex ?= rex_group n: o.content.capture, content: ///(?:[^#{c}\\]|[\\].)*///
   regex            = ///#{o.start.regex}#{o.content.regex}#{o.end.regex}///
   return regex
-exports.re_escapeString     = re_escapeString = (str) ->
+_.rex_escapeString   = rex_escapeString   = (str)                       ->
   # escape string for use in javascript regex
   # See <http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex>
   # Note that :   $& (in the replacer) means 'Insert the matched substring'
   str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
-
-exports.re_build = buildRegExp = ( o, opts = {} ) ->
+_.rex_build          = rex_build          = ( o, opts = {} )            ->
   o = resolve(o, opts)
   switch
     when not o?           then return
     when  _.isRegExp(o)   then return o
-    when  _.isString(o)   then return new RegExp re_escapeString(o)
-    when  _.isArray(o)    then return new RegExp o.map( item => re_escapeString(item) ).join('|')
+    when  _.isString(o)   then return new RegExp rex_escapeString(o)
+    when  _.isArray(o)    then return new RegExp o.map( item => rex_escapeString(item) ).join('|')
     when  _.isObject(o)
-      base = _.lookup ['re_base', 'base', 're_inner', 'inner', 're_cc', 'cc'], o
+      base = _.lookup ['rex_base', 'base', 'rex_inner', 'inner', 'rex_cc', 'cc'], o
       if base?    # for the moment, we only buikd from a base regex
         base = base.source if _.isRegExp(base)
         quantifier = o?.quantifier ?  ''
@@ -215,20 +205,24 @@ exports.re_build = buildRegExp = ( o, opts = {} ) ->
 
   throw "Don't know how to build a RegExp with the given thingy"
 
-
 # Console
-exports.dump                = dump            = ( opts = {} ) ->
+_.dump              = dump              = ( opts = {} )               ->
   opts._indent    ?= 2
   opts._transform ?= (k, v) -> return (if _.isRegExp(v) then '/' + v.source + '/' else v)
 
-  o = _.extend(opts, opts?.data)
-  data = _.omit o, ['_indent', '_transform', '_msg', '_skip', 'data']
-  msg  = o?._msg ? 'Here we go... '
-  msg += ' DUMP: ' if _.keys(data).length > 0
-  console.warn msg if msg
-  console.warn JSON.stringify(data, opts._transform, opts._indent) if _.keys(data).length > 0
+  o = opts
+  data  = _.omit opts, ['_indent', '_transform', '_msg', '_skip']
+  data  = data?.data if data?.data? and _.keys(data).length == 1
+  msg   = o?._msg ? 'Here we go... '
+  output_data = false
+  switch
+    when _.isString(data)                      then  msg  += ': ' + data;
+    when _.isObject(data) and !_.isEmpty(data) then  msg  += ' DUMP: '; output_data = true
 
-exports.writeOut      = writeOut     = ( opts = {} )    ->
+  console.warn msg if msg
+  console.warn JSON.stringify(data, opts._transform, opts._indent)  if output_data
+
+_.writeOut          = writeOut          = ( opts = {} )               ->
   { data, format, path } = opts
   format ?= if path.match /\.cson$/ then 'CSON' else 'JSON'
   text    = undefined
@@ -244,3 +238,61 @@ exports.writeOut      = writeOut     = ( opts = {} )    ->
       process.stdout.write text
 
   return data
+
+_.Bakeable  = class Bakeable
+  constructor:   ()   ->
+  bakingIngredients:   ()       ->
+    # By default, we exclude properties that are functions (to avoid accidental side-effects), but they too can be included.
+    res = _.allKeys(this)
+    _.compact res.map (item) -> if _.isFunction(item) then undefined else item       # Typically overridden
+  bakingDependencies:  ()       -> {}            # Typically overridden
+  bakingParams:    (args...)    -> args          # Optionally overridden
+  bakers:     ( key )           -> [key]         # Optionally overridden
+  baker:      ( key )           ->               # Rarely overridden
+    return unless key?
+    return unless bakers = @bakers(key)
+    bakers = [bakers] unless _.isArray(bakers)
+    bakers = _.compact bakers
+    for r in bakers
+      #_.dump _msg: "   checking baker : #{r}"
+      return r if _.isFunction(r) or _.isObject(r)
+      res = this?[r]
+      return res if res?
+    return
+  bake:       ()   ->
+    # DEBUG
+    # name_lc = @name_lc?();  _.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
+    params = @bakingParams(arguments...)
+    ingredients =  @bakingIngredients() ? []
+    deps = @bakingDependencies() ? {}
+    self = this
+    res = {}; done={}
+    for pass in [0 .. 2]
+      for i in ingredients
+        continue unless i?
+        continue if done?[i]                   # Don't bother recomputing a value we already have
+        preqs = deps?[i]
+        continue if pass >  0 and !preqs?      # non-dependants are processed ONLY during pass 0
+        continue if pass == 0 and  preqs?     #     dependants are processed ONLY after  pass 0
+        continue if preqs and not _.every _.arrayify(preqs), (preq) => res?[preq]?
+
+        #_.dump _msg: "Baking ingredient : #{i} ..."
+
+        item = if @?.baker? then @baker(i) else @?[i]
+        continue unless item?
+        v = _.resolve.call(self, item, params...)
+        res[i]  = v unless _.isUndefined(v)
+
+        done[i] = true
+
+    # DEBUG
+    # name_lc = @name_lc?();  _.dump _msg: "Just resolved '#{name_lc}' : ", data:res  if ( name_lc == 'noted' )
+
+    return unless _.keys(res).length > 0
+    return res
+  bakeOut:    ()   ->
+    data = @bake(arguments...)
+    _.writeOut _.defaults( {}, {data}, arguments...)
+
+
+module.exports = _

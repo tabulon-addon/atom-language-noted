@@ -94,6 +94,7 @@ exports.grammatics =
   tmgRegister:   ( args... )          -> atom?.grammars?.addGrammar @tmgCreate( args...)
   tmgCreate:     ( g = {}, args... )  ->
     filename =  g?.filename ? arguments?.caller?.__filename ? __filename
-    g = g.resolve(args...) if g?.resolve?
+    g  = _.resolve(g, args...)
+    #g = g.bake(args...) if g?.bake?
     atom?.grammars?.createGrammar filename, g
   tmgRetire:     ( g = {}, args... )  -> atom?.grammars?.removeGrammarForScopeName g.scopeName  if g?.scopeName?

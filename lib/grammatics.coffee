@@ -1,100 +1,47 @@
 _ = require('./thunderscore')
 
-exports.Resolvable  = class Resolvable
-  constructor:   ()                 ->
-  ingredients:   ()                 ->
-    # By default, we exclude properties that are functions (to avoid accidental side-effects), but they too can be included.
-    res = _.allKeys(this)
-    _.compact res.map (item) -> if _.isFunction(item) then undefined else item
-  dependencies:  ()                 -> {}
-  resolveOpts:   ( o )              -> o
-  resolvers:     ( key )            -> [key]
-  resolver:      ( key )            ->
-    return unless key?
-    return unless resolvers = @resolvers(key)
-    resolvers = [resolvers] unless _.isArray(resolvers)
-    resolvers = _.compact resolvers
-    for r in resolvers
-      return r if _.isFunction(r) or _.isObject(r)
-      res = this?[r]
-      return res if res?
-    return
-  resolve:       ()                 ->
-    # DEBUG
-    # name_lc = @name_lc?();  _.dump _msg: "Resolving BEGINS for '#{name_lc}' ..."
+# Base class for all Grammatic Objects (the Grammar itself as well as Rules/Patterns, etc)
+exports.GrammaticFragment  = class GrammaticFragment extends _.Bakeable
+  _specialKeys: ()                -> {
+    defs:   [ 'defs' ]
+    vars:   [ 'vars', 'm', 'stash', '_stash']
+    scopes: [ 'scopes', 'scope', 's' ]
+  }
 
-    o    = _.extended arguments..., @resolveOpts(arguments...)
-    deps = @dependencies(arguments...)
-    that = this
-    res = {}; done={}
-    for pass in [0 .. 2]
-      for i in @ingredients()
-        continue unless i?
-        continue if done?[i]                   # Don't bother recomputing a value we already have
-        preqs = deps?[i]
-        continue if pass >  0 and !preqs?      # non-dependants are processed ONLY during pass 0
-        continue if pass == 0 and  preqs?     #     dependants are processed ONLY after  pass 0
-        continue if preqs and not _.every _.arrayify(preqs), (preq) => res?[preq]?
-
-        #_.dump _msg: "Resolving ingredient : #{i} ..."
-
-        item = @resolver(i)   # @?[i + '_x' ] ? @?[i]
-        continue unless item?
-        v = _.resolve.call(that, item, o)
-        res[i]  = v unless _.isUndefined(v)
-
-        done[i] = true
-
-    # DEBUG
-    #name_lc = @name_lc?();  _.dump _msg: "Just resolved '#{name_lc}' : ", data:res  if ( name_lc == 'noted' )
-
-    return unless _.keys(res).length > 0
-    return res
-
-  writeOut:       ( o = {} )        ->
-    data = @resolve(arguments...)
-    _.writeOut _.defaults( {}, {data}, arguments...)
-
-# # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
-exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
-  defs:           ()                 -> {}
-  vars:           ()                 -> {}
-  isGrammatical:  ()                 -> true
-  ingredients:    ()                 -> ['comment', 'name', 'patterns']
-  dependencies:   ()                 -> {}
-  resolveOpts:    ()                 -> @context(arguments...)
-  resolvers:      ( key )            -> [ String(key) + '_x', key ] if key?
   constructor:    ( opts )           ->
     opts ?= {}
     opts  = { include: opts } unless _.isObject(opts)
 
     super()
 
-    stashies = [ 'm',     'stash',  'vars'  ]
-    scopies  = [ 'scopes', 'scope', 's'     ]
-    specials =  _.union(stashies, scopies, ['defs'] )
+    specialKeys    = @_specialKeys() ? {}
+    allSpecialKeys = _.compact _.union _.values specialKeys
 
-    #_.dump _msg: 'Constructing lexicon.', data: {opts}
-    defs = _.compact _.resolve.call(this, [@?.defs, opts?.defs])
-    o = _.extend this, defs..., _.omit(opts, specials)
+    o = _.extend this, _.resolve.call(this, _.extract_compact([this, opts], specialKeys?.defs))...
+    o = _.extend this, _.omit(opts, allSpecialKeys)
 
-    stashes = []
-    for obj in [ opts, this ]
-      for k in stashies
-        stashes.push _.resolve.call(obj, obj[k])
-    stashes = _.compact(stashes)
-    @stash = _.defaulted   stashes...
+    @_stash        =         _.defaulted _.resolve.call(this, _.extract_compact([opts, this],    specialKeys?.vars))...
+    @_stash.scopes = _.terso _.defaulted _.resolve.call(this, _.extract_compact([opts, @_stash], specialKeys?.scopes))...
+  bakingIngredients:  () -> @ingredients()
+  bakingDependencies: () -> @dependencies()
+  bakingParams:       () -> [ @context() ]
+  bakers:          (key) -> if key? then [ "#{key}_x", key ] else undefined
 
-    scopes = _.defaulted   opts?.scopes, opts?.scope, opts?.s, @stash?.scopes, @stash?.scope, @stash?.s
-    delete @stash.scopes
-    @stash.scopes = scopes if _.keys(scopes).length > 0
+  writeOut:       ()                 -> @bakeOut(arguments...)
 
+  defs:           ()                 -> {}                                # Typically overridden (for adding more)
+  vars:           ()                 -> {}                                # Typically overridden (for adding more)
+
+  ingredients:    ()                 -> ['comment', 'name', 'patterns']   # Typically overridden (for adding more)
+  dependencies:   ()                 -> {}                                # Typically overridden (for adding more)
+
+  isGrammatical:  ()                 -> true
   isDisabled:     ( opts = {} )      ->
     return  @disabled unless _.isUndefined(@?.disabled)
     return !@enabled  unless _.isUndefined(@?.enabled)
 
     {ref}    = opts
-    m        = @mstash(opts) ? {}
+    {m}      = @context(opts)
     for n in [ref, @include, @name ]
       continue if  _.isUndefined(n)
       name      = String(_.resolve.call(this, n, opts))
@@ -125,20 +72,25 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
       soft: 'markup.other.soft'
     }, _.dittoMappings @scopeNamesCommon()
   scopes:          ()      ->
-    {scopes} = _.defaulted  arguments..., @mstash?(arguments...), { scopes: {} }
+    {scopes} = _.defaulted  arguments..., @stash?(arguments...), { scopes: {} }
     _.defaulted  scopes, @scopeDefs()
 
-  mstash:         ( opts = {} )      ->
-    o = opts;
-    zoo = _.defaulted  o?.m, o?.stash, this?.m, this?.stash, @?.vars?()
-    return zoo
+  stash:          ( opts = {} )      -> _.defaulted _.resolve.call(this, _.extract_compact([opts, this], _.without( @_specialKeys()?.vars ? [], 'stash')))...
   context:        ()                 ->
-    r = { }
-    r.m = r.vars  = r.stash  = @mstash(arguments...)
-    r.s = r.scope = r.scopes = @scopes(arguments...)
-    return r
+    # Provides the current stash (vars) and scopes, under various aliases (synonyms) for ease of use.
+    res = { }
+    specialKeys = @_specialKeys()
+
+    res.stash   = @stash(arguments...)
+    res[key]    = res.stash  for key in ['m'] # _.without( @_specialKeys()?.vars   ? [], 'stash')
+
+    res.scopes  = @scopes(arguments...)
+    res[key]    = res.scopes for key in ['s'] # _.without( @_specialKeys()?.scopes ? [], 'scopes')
+
+    return res
 
   recipe:         ( opts = {} )      -> this # %#DEPRECATED. For backwards compatibity.
+
   name_lc:        ()                 -> String( _.resolve.call(this, @?.name, arguments...)).toLowerCase() if @?.name?
   name_x:         ()                 -> tidyScope _.resolve.call(this, @?.name, arguments...)
   patterns_x:     ( args... )        ->
@@ -153,9 +105,9 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
     fixRules.call(this, p, args... )
 
   collate:        ( o = {}  )        ->
-    items = o?.items ? @?.subrules ? []
-    items = _.resolve.call(this, items, arguments...)
-    stash = @mstash(arguments...)
+    items   = o?.items ? @?.subrules ? []
+    items   = _.resolve.call(this, items, arguments...)
+    {stash} = @context(arguments...)
 
     r = []  # result
     for item in items
@@ -167,10 +119,13 @@ exports.GrammaticFragment  = class GrammaticFragment extends Resolvable
 
     r = _.compact(r)
 
-
 # Class that enables easy dynamic generation of first-mate grammars (useful for Atom language packages)
 exports.Grammar = class Grammar extends GrammaticFragment
-  _props: [
+  constructor:    () ->
+    super(arguments...)
+    @filename ?= arguments?.caller?.__filename
+  comment:        () -> genericGrammarRemarks();   # "Remarks" # @FIXME: During DEBUGGING, we just return a short string.
+  ingredients:    () -> _.union super(arguments...), [
     'comment',
     'name',       'scopeName',
     'fileTypes',  'firstLineMatch'
@@ -179,15 +134,9 @@ exports.Grammar = class Grammar extends GrammaticFragment
     'foldingStartMarker', 'foldingStopMarker',
     'limitLineLength',     'maxLineLength',     'maxTokensPerLine'
   ]
-  ingredients:    () -> _.union super(arguments...), @_props
-  comment:        () -> genericGrammarRemarks(); "Yorum" # @FIXME: During DEBUGGING, we just return a short string.
-  constructor:    () ->
-    super(arguments...)
-    @filename ?= arguments?.caller?.__filename
-
-  rules:          () -> {} # you may wish to override this!
-  lexicons:       () -> {}
-  lexiconClass:   () -> Lexicon
+  rules:          () -> {}        # you may wish to override this
+  lexicons:       () -> {}        # you may wish to override this
+  lexiconClass:   () -> Lexicon   # you may wish to override this, to match your own Lexicon subclass
   repository_x:   () ->
     return if @isDisabled(arguments...)
     repos = {
@@ -197,7 +146,7 @@ exports.Grammar = class Grammar extends GrammaticFragment
     for k in _.union( ['repository', 'rules'], _.keys(repos) )
       continue if _.isUndefined v = @?[k]
       r = _.resolve.call this, v, arguments...
-      r = fixRules r,  _.extend( {}, arguments..., repos?[k] )
+      r = fixRules r,  _.extended repos?[k]
       repo = _.defaults repo, r
 
     return repo
@@ -208,15 +157,13 @@ exports.GrammaticCapture  = class GrammaticCapture extends GrammaticFragment
     opts ?= {}
     opts  = { name: opts } unless _.isObject(opts)
     super(opts)
-  ingredients:    ()                  -> _.union      super(arguments...), ['comment', 'name', 'patterns']
+  ingredients:    ()                  -> _.union    super(arguments...), ['comment', 'name', 'patterns']
 
 exports.GrammaticRule     = class GrammaticRule extends GrammaticFragment
   constructor:    ()                  -> super(arguments...)
-  ingredients:    ()                  -> _.union      super(arguments...), ['comment', 'name', 'patterns', 'include', 'match', 'captures', 'begin', 'beginCaptures', 'end', 'endCaptures', 'contentName']
+  ingredients:    ()                  -> _.union    super(arguments...), ['comment', 'name', 'patterns', 'include', 'match', 'captures', 'begin', 'beginCaptures', 'end', 'endCaptures', 'contentName']
   dependencies:   ()                  -> _.extended super(arguments...), { captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin' }
 
-  match:          ()                  ->
-  captures:       ()                  ->
   captures_x:     ()                  -> @buildCaptures(arguments...)
 
   # utilities
@@ -229,21 +176,21 @@ exports.GrammaticRule     = class GrammaticRule extends GrammaticFragment
 exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
   constructor:    ()       -> super(arguments...)
   match:          ()       ->
-    re = @buildRegexen?(['anterior', 'intro', 'head', 'body', 'tail', 'conclusion', 'posterior'], arguments...)
-    return unless re?.body? and not _.isEmpty(re?.body)
+    rex = @buildRegexen?(['anterior', 'intro', 'head', 'body', 'tail', 'conclusion', 'posterior'], arguments...)
+    return unless rex?.body? and not _.isEmpty(rex?.body)
 
     ///
-    #{re.anterior}
+    #{rex.anterior}
     (                                                         # $1  - full term
-      (#{re.intro})                                           # $2
+      (#{rex.intro})                                           # $2
       (                                                       # $3  - term
-        (#{re.head})                                          # $4
-        (#{re.body})                                          # $5
-        (#{re.tail})                                          # $6
+        (#{rex.head})                                          # $4
+        (#{rex.body})                                          # $5
+        (#{rex.tail})                                          # $6
       )
-        (#{re.conclusion})                                    # $7
+        (#{rex.conclusion})                                    # $7
     )
-    #{re.posterior}
+    #{rex.posterior}
     ///
   captures:       ()       ->
     { m, s } = @context(arguments...)
@@ -265,7 +212,7 @@ exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
 # # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
 exports.Lexicon  = class Lexicon extends GrammaticRuleEasy
   constructor:    ()      -> super(arguments...)
-  defs:           ()      -> _.extended super(arguments...), { re_anterior:/(?:^|\s|\W)/, re_head: /[@#]?/, re_posterior:/\b/ }
+  defs:           ()      -> _.extended super(arguments...), { rex_anterior:/(?:^|\s|\W)/, rex_head: /[@#]?/, rex_posterior:/\b/ }
   scopes:         ()      ->
     _.extended super(arguments...), {
       suffix: 'text.lexicon'
@@ -285,12 +232,12 @@ exports.tidyScope     = tidyScope     = ( scope )                   ->
 exports.buildRegexen  = buildRegexen  = (o, props)                  ->
   # build regexes from a bunch of properties (whose names are given by the srcProps array) of a given objet (src)
   return unless o?
-  re = {}
+  rex = {}
   for k in props
     v = o?[k];
-    re[k]  ?= o?.re?[k] ? o?['re_' + k] ? if v? then _.re_build(v) else ''
-    re[k]  = re[k].source if _.isRegExp(re[k])
-  return re
+    rex[k]  ?= o?.rex?[k] ? o?['rex_' + k] ? if v? then _.rex_build(v) else ''
+    rex[k]  = rex[k].source if _.isRegExp(rex[k])
+  return rex
 exports.buildCaptures = buildCaptures = ( opts = {} )               ->
   {caps} = opts
   return fixCaptures(caps, opts) unless _.isArray(caps)
@@ -314,17 +261,17 @@ exports.fixFragments  = fixFragments  = ( fragments, opts = {} )    ->
 exports.fixFragment   = fixFragment   = ( fragment,  opts = {} )    ->
   {klass} = _.defaulted  opts, { klass: GrammaticFragment }
   return unless fragment?
-  fragment = _.resolve.call this, fragment, opts
-  return unless fragment?
-  fragment = new klass(fragment) unless fragment instanceof GrammaticFragment
-  return if fragment.isDisabled opts
-  return  fragment
+  unless fragment instanceof GrammaticFragment
+    fragment = _.resolve.call this, fragment, opts
+    fragment = new klass(fragment)
+    #_.dump _msg: "     Just fixed fragment by creating a new instance of '#{fragment.constructor.name}' with it ", data: fragment
+  return if fragment.isDisabled(opts)
+  return fragment
 
-exports.fixCaptures   = fixCaptures   = ( captures,  opts = {} )    -> fixFragments.call this, captures, _.extend( {}, opts, { klass: ( opts?.captureClass ? GrammaticCapture)  } )
-exports.fixCapture    = fixCapture    = ( capture,   opts = {} )    -> fixFragment.call  this, capture,  _.extend( {}, opts, { klass: ( opts?.captureClass ? GrammaticCapture)  } )
-
-exports.fixRules      = fixRules      = ( rules,  opts = {} )       -> fixFragments.call this, rules, _.extend( {}, opts, { klass: ( opts?.ruleClass ? GrammaticRule) } )
-exports.fixRule       = fixRule       = ( rule,   opts = {} )       -> fixFragment.call  this, rule,  _.extend( {}, opts, { klass: ( opts?.ruleClass ? GrammaticRule) } )
+exports.fixCaptures   = fixCaptures   = ( captures, o = {} )    -> fixFragments.call this, captures, _.extend( {}, o, { klass: ( o?.captureClass ? GrammaticCapture)  } )
+exports.fixCapture    = fixCapture    = ( capture,  o = {} )    -> fixFragment.call  this, capture,  _.extend( {}, o, { klass: ( o?.captureClass ? GrammaticCapture)  } )
+exports.fixRules      = fixRules      = ( rules,    o = {} )    -> fixFragments.call this, rules, _.extend( {}, o, { klass: ( o?.ruleClass ? GrammaticRule) } )
+exports.fixRule       = fixRule       = ( rule,     o = {} )    -> fixFragment.call  this, rule,  _.extend( {}, o, { klass: ( o?.ruleClass ? GrammaticRule) } )
 
 exports.genericGrammarRemarks = genericGrammarRemarks = ()          ->
     [

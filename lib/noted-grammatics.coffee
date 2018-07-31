@@ -32,12 +32,12 @@
 helper = require('./grammatics')
 _      = require('./thunderscore')
 
-exports.rules         = rules  = rule = {} # for sugar & easy referral
+exports.rules         = exports.rule = rules  = rule = {} # for sugar & easy referral
 
 exports.recipe        = recipe        = () -> new Grammar(arguments...)
 exports.bake          = bake          = () -> g = recipe(arguments...); g.resolve(arguments...)
 exports.writeOut      = writeOut      = () -> g = recipe(arguments...); g.writeOut(arguments...)
-exports.run           = run           = () -> writeOut(arguments...)   #  generates a static CSON atom grammar and prints it on STDOUT
+#exports.run           = run           = () -> writeOut(arguments...)   #  generates a static CSON atom grammar and prints it on STDOUT
 
 
 exports.spirits       = spirits       = () ->
@@ -106,10 +106,10 @@ exports.Grammar       = class Grammar extends helper.Grammar
   lexicons:             ()          -> {
     todoMore: { # todo-more-words
       subrules: [
-        { mood: 'deprecated', re_body: /DEPRECATED/                                                     }
-        { mood: 'bad',        re_body: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/                  }
-        { mood: 'fishy',      re_body: /WARNING|WARN|HACK/                                              }
-        { mood: 'neutral',    re_body: /NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK/   }
+        { mood: 'deprecated', rex_body: /DEPRECATED/                                                     }
+        { mood: 'bad',        rex_body: /WTF|BUG|ERROR|OMG|ERR|OMFGRLY|BROKEN|REFACTOR/                  }
+        { mood: 'fishy',      rex_body: /WARNING|WARN|HACK/                                              }
+        { mood: 'neutral',    rex_body: /NOTE|INFO|IDEA|DEBUG|REMOVE|OPTIMIZE|REVIEW|UNDONE|TODO|TASK/   }
       ]
     }
   }
@@ -119,10 +119,10 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
   scopes:       () -> _.extended super(arguments...), scopes.call(this, arguments...)
   match:        () ->
     {m, s} =  @context(arguments...)
-    re_notelet_term           = () ->
+    rex_notelet_term           = () ->
       # see below for the definitions of these
-      re_spirit_term   = re_notelet_spirit_term().source
-      re_standout_term = re_notelet_standout_term().source
+      rex_spirit_term   = rex_notelet_spirit_term().source
+      rex_standout_term = rex_notelet_standout_term().source
 
       # !@NOTE: Regex "comments" are not reported as being in "comment" scope by [language-coffescript.]
       # Therefore [language-noted] syntax-highlighting won't work within those.
@@ -131,12 +131,12 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
       (?:^|\s|\W)                                               # NOTELET is required to be immediately preceded by whitespace or a non-word character, or else start on a newline.
       # <<<<<<< BEGIN: notelet-term
       (                                                         # < 1: NOTELET-term             // The entire notelet expression that has matched
-        #{re_spirit_term}
-        #{re_standout_term}
+        #{rex_spirit_term}
+        #{rex_standout_term}
       )                                                         # > 1: NOTELET-term
       # >>>>>>> END: notelet-term
       ///
-    re_notelet_spirit_term    = () => ///
+    rex_notelet_spirit_term    = () => ///
       # <<<<<<< BEGIN: spirit-term
       (                                                       # < 2:  < SPIRIT-term             // Only the portion BEFORE the reftype character (#@)
         (                                                     # < 3:    < desginator
@@ -152,7 +152,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
       )                                                       # > 2:  > SPIRIT-term
       # >>>>>>> END: spirit-term=
     ///
-    re_notelet_standout_term  = () => ///
+    rex_notelet_standout_term  = () => ///
       # <<<<<<< BEGIN: standout-term
       (                                                       # < 9:  < standout-rem
         ([#@])                                                # . 10:    . head
@@ -178,7 +178,7 @@ rule.Notelet  = class Notelet extends helper.GrammaticRule
       # >>>>>>> END: standout-term
     ///
 
-    result = re_notelet_term()
+    result = rex_notelet_term()
   captures:     () ->
     # !@NOTE that, to keep things DRY, the captures are actually set ,@programmatically below;
     # ( since we have a gzillian of them due to lack of support for branch resets )
