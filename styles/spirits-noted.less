@@ -33,7 +33,8 @@
 //.....................................
 .SpiritDef(default    )     { @marker: ~"@{name}";   .SpiritStd(@name); }
 .SpiritDef(neutral    )     { @marker: ~"@{name}";   .SpiritStd(@name); }
-.SpiritDef(spooky     )     { @marker: ~'\%';  .SpiritStd(@name); }
+.SpiritDef(shaky      )     { @marker: ~'\%';  .SpiritStd(@name); }
+.SpiritDef(spooky     )     { @marker: ~'\_';  .SpiritStd(@name); }
 .SpiritDef(bad        )     { @marker: ~'\-';  .SpiritStd(@name); }
 .SpiritDef(fishy      )     { @marker: ~'\*';  .SpiritStd(@name); }
 .SpiritDef(alert      )     { @marker: ~'\!';  .SpiritStd(@name); }
@@ -42,17 +43,18 @@
 .SpiritDef(curious    )     { @marker: ~'\?';  .SpiritStd(@name); }
 .SpiritDef(eager      )     { @marker: ~'\:';  .SpiritStd(@name); }
 .SpiritDef(bland      )     { @marker: ~'\.';  .SpiritStd(@name); }
+.SpiritDef(bland      )     { @marker: ~'\,';  .SpiritStd(@name); }
 .SpiritDef(dull       )     { @marker: ~'\;';  .SpiritStd(@name); }
 .SpiritDef(verbose    )     { @marker: ~'\&';  .SpiritStd(@name); }
 .SpiritDef(artisan    )     { @marker: ~'\~';  .SpiritStd(@name); }
-.SpiritDef(mentioned  )     { @marker: ~'\@';  .SpiritStd(@name); }
+.SpiritDef(mentionny  )     { @marker: ~'\@';  .SpiritStd(@name); }
 .SpiritDef(hashtaggy  )     { @marker: ~'\#';  .SpiritStd(@name); }
 
 
 // The '-std' list below just enumerates the names of all standard spirits.
 // In code, it's the other variable (without the '-std' suffix) that gets used. So, it's easy to override.
 @noted-spirits: @noted-spirits-std;
-@noted-spirits-std: spooky, bad, fishy, alert, good, pertinent, curious, eager, bland, dull, verbose, artisan, mentioned, hashtaggy;
+@noted-spirits-std: shaky, spooky, bad, fishy, alert, good, pertinent, curious, eager, bland, dull, verbose, artisan, mentionny hashtaggy;
 
 // In code, it's the other variable without the '-std' suffix that gets used. So, it's easy to override.
 @noted-spirit-css: @noted-spirit-css-std;

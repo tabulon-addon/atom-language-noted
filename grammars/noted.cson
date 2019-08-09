@@ -8,14 +8,13 @@ patterns: [
 
 repository: {
   notelet: {
-    comment: '<       <<<<                  > ><          >><<<    ><<              >>>>>  >'
-    comment: '0       1234                  4 35          52678    89X              X9761  0'
-    match:   '(?<!\\w)(((([%\\-*!>+?:.;&~#@])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))\\b'
+    comment: '<       <<<<                    > ><          >><<<    ><<              >>>>>  >'
+    comment: '0       1234                    4 35          52678    89X              X9761  0'
+    match:   '(?<!\\w)(((([\\%\\-_*!>+?:.,;&~#@])+)((?:[0-9])?))((([#@])(((?:\\w|[\\-])+)))))\\b'
     # Below are a bunch of tokens for a quick reference and also a brief visual test.
-    #   @INVALID ~@AUTHOR @@NEUTRAL :@EAGER .@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SPOOKY
-    #   #INVALID ~#AUTHOR ##NEUTRAL :@EAGER .@BLAND ;@DULL &@VERBOSE +#GOOD ?#QUESTION  >#PERTINENT !#ALERT *#FISHY -#BAD %#SPOOKY
-    #   Levels -5@BAD
-    #   RADAR:  <radar://issue/124>
+    #   @NONE ~@AUTHOR @@NEUTRAL :@EAGER ,@BLAND ;@DULL &@VERBOSE +@GOOD ?@QUESTION  >@PERTINENT !@ALERT *@FISHY -@BAD %@SHAKY _@SPOOKY
+    #   #NONE ~#AUTHOR ##NEUTRAL :@EAGER ,@BLAND ;@DULL &@VERBOSE +#GOOD ?#QUESTION  >#PERTINENT !#ALERT *#FISHY -#BAD %#SHAKY _#SPOOKY
+    #   RADAR:  <radar://issue/124> (radar links are always rendered the same as >@PERTINENT)
     captures:
       1: name: 'meta.notelet.text.noted'
       2: name: 'punctuation.definition.notelet.spirit.term.text.noted'
