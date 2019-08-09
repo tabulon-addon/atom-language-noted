@@ -3,20 +3,20 @@ _      = require('./thunderscore')
 
 # Utility class for dealing with configuration settings for an atom package
 exports.PkgConfig = class PkgConfig extends CompositeDisposable
-  _initial:           { fetched: 0, watching: false, tunedIn: false}
-  defs:         () -> { stash: {}, backend: atom.config }
+  _initial:           {fetched: 0, watching: false, tunedIn: false}
+  defs:         () -> {stash: {}, backend: atom.config}
 
   tips:         () -> {
-    onDidChange: { provokes: ['onRefreshed'] }
-    onFetched:   { provokes: ['onRefreshed'] }
-    onRefreshed: { }
-    observe:     { }
+    onDidChange: {provokes: ['onRefreshed']}
+    onFetched:   {provokes: ['onRefreshed']}
+    onRefreshed: {}
+    observe:     {}
   }
 
   constructor : (opts = {} ) ->
     super()
-    { @fetched, @watching, @tunedIn}                = @_initial   # Props that reflect internal state. They will be ignored if passed to the constructor.
-    { @pkgName, @prefix, @schema, @config, @stash, @backend } = o = _.defaulted opts, @defs() # The only opts really needed are: 'schema' and 'prefix' (or 'pkgName')
+    {@fetched, @watching, @tunedIn}                = @_initial   # Props that reflect internal state. They will be ignored if passed to the constructor.
+    {@pkgName, @prefix, @schema, @config, @stash, @backend} = o = _.defaulted opts, @defs() # The only opts really needed are: 'schema' and 'prefix' (or 'pkgName')
 
     @schema ?= @config  # synonym
     @prefix ?= if @pkgName? then @pkgName + '.' else ''
@@ -42,8 +42,8 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   startWatch:         (args...)   -> @watch(args...)
   pauseWatch:         (args...)   -> @watching = false;  @addWatch(args...) if args.length > 0; return this
 
-  addWatch:           ( o = {} ) ->  # use this to get notified of various events
-    for k,f of o      # k: event category (i.e. observe, onDidChange, onFetched), f: function to be calledback
+  addWatch:           (o = {})    ->  # use this to get notified of various events
+    for k, f of o     # k: event category (i.e. observe, onDidChange, onFetched), f: function to be calledback
       @watches ?= {}
       a = @watches[k] ?= []
       a.push f if f? and not _.contains(a, f)
@@ -53,7 +53,7 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   removeWatch:        ( o = {} ) ->
     return this unless _.isObject(@watches)
 
-    for category,f of o    # f is a reference to a callback function that was previously registered via 'addWatch'.
+    for category, f of o    # f is a reference to a callback function that was previously registered via 'addWatch'.
       categories = if category == '*' then _.keys(@watches) else [category]
       for k in categories
         continue unless @watches?[k]? and _.isArray(@watches[k])
@@ -79,18 +79,18 @@ exports.PkgConfig = class PkgConfig extends CompositeDisposable
   recompute:          ( h = @stash ) -> h  # Feel free to override this for recomputing calculated settings. Must return the -eventually updated- stash. It does nothing by default.
   _tuneIn:            () ->  # Register event handlers for changes to our settings
     unless @tunedIn
-      for k,v of @schema # register observer callbacks (closure!)
-          # '@add' is inherited from 'CompositeDisposable'
-          @add @backend.onDidChange @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('onDidChange', k, val, oVal)
-          @add @backend.observe     @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('observe',     k, val, oVal)
+      for k, v of @schema   # register observer callbacks (closure!)
+        # '@add' is inherited from 'CompositeDisposable'
+        @add @backend.onDidChange @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('onDidChange', k, val, oVal)
+        @add @backend.observe     @prefix + k, (val) =>  oVal = @stash[k];  @stash[k] = val; @takeNotice('observe',     k, val, oVal)
       @tunedIn = true
     return this
 
 
 exports.grammatics =
   tmgUpdate:     ( g = {}, args... )  ->
-     @tmgRetire   g, args...
-     @tmgRegister(g, args...) #unless g?.disabled ? false
+    @tmgRetire   g, args...
+    @tmgRegister(g, args...) #unless g?.disabled ? false
   tmgRegister:   ( args... )          -> atom?.grammars?.addGrammar @tmgCreate( args...)
   tmgCreate:     ( g = {}, args... )  ->
     filename =  g?.filename ? arguments?.caller?.__filename ? __filename

@@ -93,9 +93,9 @@ exports.Grammar       = class Grammar extends helper.Grammar
     injectionSelector: 'comment, text.plain'
   }
   patterns:             ()          ->  [ # adjusted elsewhere programmatically in order to eliminate patterns that are 'disabled'.
-    { include: '#notelet'   }
-    { include: '#radar'     }
-    { include: '#todoMore'  }
+    {include: '#notelet'}
+    {include: '#radar'}
+    {include: '#todoMore'}
   ]
   rules:                ()          ->
     _.extended super(arguments...), {

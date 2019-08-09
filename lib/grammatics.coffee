@@ -10,7 +10,7 @@ exports.GrammaticFragment  = class GrammaticFragment extends _.Bakeable
 
   constructor:    ( opts )           ->
     opts ?= {}
-    opts  = { include: opts } unless _.isObject(opts)
+    opts  = {include: opts} unless _.isObject(opts)
 
     super()
 
@@ -72,13 +72,13 @@ exports.GrammaticFragment  = class GrammaticFragment extends _.Bakeable
       soft: 'markup.other.soft'
     }, _.dittoMappings @scopeNamesCommon()
   scopes:          ()      ->
-    {scopes} = _.defaulted  arguments..., @stash?(arguments...), { scopes: {} }
+    {scopes} = _.defaulted  arguments..., @stash?(arguments...), {scopes: {}}
     _.defaulted  scopes, @scopeDefs()
 
   stash:          ( opts = {} )      -> _.defaulted _.resolve.call(this, _.extract_compact([opts, this], _.without( @_specialKeys()?.vars ? [], 'stash')))...
   context:        ()                 ->
     # Provides the current stash (vars) and scopes, under various aliases (synonyms) for ease of use.
-    res = { }
+    res = {}
     specialKeys = @_specialKeys()
 
     res.stash   = @stash(arguments...)
@@ -140,7 +140,7 @@ exports.Grammar = class Grammar extends GrammaticFragment
   repository_x:   () ->
     return if @isDisabled(arguments...)
     repos = {
-      lexicons: { ruleClass: @lexiconClass() }
+      lexicons: {ruleClass: @lexiconClass()}
     }
     repo = {}
     for k in _.union( ['repository', 'rules'], _.keys(repos) )
@@ -155,14 +155,14 @@ exports.Grammar = class Grammar extends GrammaticFragment
 exports.GrammaticCapture  = class GrammaticCapture extends GrammaticFragment
   constructor:    (opts)              ->
     opts ?= {}
-    opts  = { name: opts } unless _.isObject(opts)
+    opts  = {name: opts} unless _.isObject(opts)
     super(opts)
   ingredients:    ()                  -> _.union    super(arguments...), ['comment', 'name', 'patterns']
 
 exports.GrammaticRule     = class GrammaticRule extends GrammaticFragment
   constructor:    ()                  -> super(arguments...)
   ingredients:    ()                  -> _.union    super(arguments...), ['comment', 'name', 'patterns', 'include', 'match', 'captures', 'begin', 'beginCaptures', 'end', 'endCaptures', 'contentName']
-  dependencies:   ()                  -> _.extended super(arguments...), { captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin' }
+  dependencies:   ()                  -> _.extended super(arguments...), {captures: 'match', beginCaptures:'begin', endCaptures: 'end', contentName: 'begin'}
 
   captures_x:     ()                  -> @buildCaptures(arguments...)
 
@@ -193,7 +193,7 @@ exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
     #{rex.posterior}
     ///
   captures:       ()       ->
-    { m, s } = @context(arguments...)
+    {m, s} = @context(arguments...)
     {
       1:  name: tidyScope "#{s.meta}.term.#{s.suffix}"
       2:  name: tidyScope "#{s.soft}.intro.#{s.gravy}.#{s.suffix}"
@@ -212,7 +212,7 @@ exports.GrammaticRuleEasy  = class GrammaticRuleEasy extends GrammaticRule
 # # generates patterns for lexicons/wordlists like those for [language-todo] and its derivatives
 exports.Lexicon  = class Lexicon extends GrammaticRuleEasy
   constructor:    ()      -> super(arguments...)
-  defs:           ()      -> _.extended super(arguments...), { rex_anterior:/(?:^|\s|\W)/, rex_head: /[@#]?/, rex_posterior:/\b/ }
+  defs:           ()      -> _.extended super(arguments...), {rex_anterior:/(?:^|\s|\W)/, rex_head: /[@#]?/, rex_posterior:/\b/}
   scopes:         ()      ->
     _.extended super(arguments...), {
       suffix: 'text.lexicon'
@@ -259,7 +259,7 @@ exports.fixFragments  = fixFragments  = ( fragments, opts = {} )    ->
     when _.isObject(fragments)  then return _.mapObject fragments,           (fragment) -> fixFragment.call(this, fragment, opts)
   return fragments
 exports.fixFragment   = fixFragment   = ( fragment,  opts = {} )    ->
-  {klass} = _.defaulted  opts, { klass: GrammaticFragment }
+  {klass} = _.defaulted  opts, {klass: GrammaticFragment}
   return unless fragment?
   unless fragment instanceof GrammaticFragment
     fragment = _.resolve.call this, fragment, opts
@@ -268,10 +268,10 @@ exports.fixFragment   = fixFragment   = ( fragment,  opts = {} )    ->
   return if fragment.isDisabled(opts)
   return fragment
 
-exports.fixCaptures   = fixCaptures   = ( captures, o = {} )    -> fixFragments.call this, captures, _.extend( {}, o, { klass: ( o?.captureClass ? GrammaticCapture)  } )
-exports.fixCapture    = fixCapture    = ( capture,  o = {} )    -> fixFragment.call  this, capture,  _.extend( {}, o, { klass: ( o?.captureClass ? GrammaticCapture)  } )
-exports.fixRules      = fixRules      = ( rules,    o = {} )    -> fixFragments.call this, rules, _.extend( {}, o, { klass: ( o?.ruleClass ? GrammaticRule) } )
-exports.fixRule       = fixRule       = ( rule,     o = {} )    -> fixFragment.call  this, rule,  _.extend( {}, o, { klass: ( o?.ruleClass ? GrammaticRule) } )
+exports.fixCaptures   = fixCaptures   = ( captures, o = {} )    -> fixFragments.call this, captures, _.extend( {}, o, {klass: ( o?.captureClass ? GrammaticCapture)} )
+exports.fixCapture    = fixCapture    = ( capture,  o = {} )    -> fixFragment.call  this, capture,  _.extend( {}, o, {klass: ( o?.captureClass ? GrammaticCapture)} )
+exports.fixRules      = fixRules      = ( rules,    o = {} )    -> fixFragments.call this, rules, _.extend( {}, o, {klass: ( o?.ruleClass ? GrammaticRule)} )
+exports.fixRule       = fixRule       = ( rule,     o = {} )    -> fixFragment.call  this, rule,  _.extend( {}, o, {klass: ( o?.ruleClass ? GrammaticRule)} )
 
 exports.genericGrammarRemarks = genericGrammarRemarks = ()          ->
     [
